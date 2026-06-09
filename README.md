@@ -9,6 +9,16 @@
 
 **📖 [한국어](#한국어) · [English](#english)** ·  📌 *Portfolio/demo build — all data is fictional sample data. 포트폴리오/데모용 — 데이터는 전부 가상 샘플.*
 
+## 🤖 Build / run with an AI · AI로 바로 빌드·실행
+**EN — No build step.** Clone, then either open `task-board.html` in a browser, or hand the folder to
+your AI assistant and say: **"Read `AGENTS.md` and run this."** A fresh AI session auto-onboards from
+`AGENTS.md` / `CLAUDE.md` and sets it up exactly as intended. **Prereqs:** a browser; Python 3.6+ for
+the `log-inquiry.py` helper (standard library only — nothing to install).
+
+**KO — 빌드 단계 없음.** 클론한 뒤 `task-board.html`을 브라우저로 열거나, 폴더를 AI에게 주고 **"`AGENTS.md`
+읽고 실행해줘"** 라고 하세요. 새 AI 세션이 `AGENTS.md` / `CLAUDE.md`로 자동 온보딩해 의도대로 구성합니다.
+**준비물:** 브라우저 + `log-inquiry.py`용 Python 3.6+ (표준 라이브러리만 — 설치할 것 없음).
+
 ---
 
 # 한국어

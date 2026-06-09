@@ -1,6 +1,6 @@
 # Ops Task & Inquiry Dashboard
 
-**🌐 Language: [한국어](./README.md) · English (this page)**
+**🌐 Language: [한국어](./README.md) · English (this page)** · 💬 [Discussions](https://github.com/11pyo/ai-collab-dashboard/discussions)
 
 > A tiny, dependency-free **operations dashboard** — a kanban board for tasks and a 4-column board for
 > inquiries — built so **multiple people (or AI sessions) can write to it at the same time without

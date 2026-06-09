@@ -1,6 +1,6 @@
 # 운영 태스크·문의 대시보드 (Ops Task & Inquiry Dashboard)
 
-**🌐 Language: 한국어 (이 문서) · [English](./README.en.md)**
+**🌐 Language: 한국어 (이 문서) · [English](./README.en.md)** · 💬 [Discussions (피드백·질문)](https://github.com/11pyo/ai-collab-dashboard/discussions)
 
 > 서버·DB·빌드 없이 도는 작은 **운영 대시보드** — 태스크 칸반 + 문의 4열 보드. 핵심은 **여러 사람(또는 여러
 > AI 세션)이 동시에 기록해도 깨지지 않는다**는 점입니다.

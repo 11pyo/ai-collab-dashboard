@@ -1,69 +1,148 @@
-# Ops Task & Inquiry Dashboard
+# Ops Task & Inquiry Dashboard · 운영 태스크·문의 대시보드
 
-A tiny, dependency-free **operations dashboard**: a kanban board for tasks and a
-4-column board for incoming inquiries — designed so **multiple people (or AI
-sessions) can write to it at the same time without corrupting it.**
+> A tiny, dependency-free **operations dashboard** — a kanban board for tasks and a
+> 4-column board for inquiries — built so **multiple people (or AI sessions) can write
+> to it at the same time without corrupting it.**
+>
+> 서버·DB·빌드 없이 도는 작은 **운영 대시보드** — 태스크 칸반 + 문의 4열 보드. 핵심은
+> **여러 사람(또는 여러 AI 세션)이 동시에 기록해도 깨지지 않는다**는 점입니다.
 
-The trick is the inquiry log: it's an **append-only push log, merged by id**.
-Every update is one new line; pushing the same id again merges its fields. No
-in-place edits, so concurrent writers never clobber each other. A small Python
-helper (`log-inquiry.py`) does the appends behind a short file-lock.
-
-> 📌 **Portfolio / demo build.** A sanitized extract of an internal dashboard I
-> built to track day-to-day operations work. All tasks, inquiries, names, and
-> teams here are **fictional sample data**.
-
-여러 사람·여러 AI 세션이 **동시에 기록해도 깨지지 않는** 운영 대시보드입니다.
-문의 로그를 **append-only(한 줄씩 추가) + id 병합** 방식으로 설계해, 같은 id를
-다시 push하면 필드가 병합됩니다. 제자리 수정이 없으니 동시 기록 충돌이 없습니다.
+**📖 [한국어](#한국어) · [English](#english)** ·  📌 *Portfolio/demo build — all data is fictional sample data. 포트폴리오/데모용 — 데이터는 전부 가상 샘플.*
 
 ---
 
+# 한국어
+
+## 무엇인가
+정적 HTML 파일 하나 + 작은 파이썬 헬퍼로 도는 운영 작업판입니다. 두 보드를 한 화면에 둡니다.
+- **태스크 칸반** — 진행 중 업무를 상태(접수·진행중·대기·완료) 컬럼으로.
+- **문의 보드** — 들어오는 문의를 같은 4열로.
+
+비결은 문의 로그가 **추가전용(append-only) + id 병합** 이라는 것 — 모든 변경이 새 줄 하나이고, 같은 id를 다시 쓰면 필드가 병합됩니다. 제자리 수정이 없으니 동시 기록 충돌이 없습니다.
+
+## 영감 — 토요타 칸반
+보드 형태(작업을 **카드**로 만들어 상태 **컬럼** 사이로 흘려보내는 방식)는 **토요타 생산방식(TPS)의 칸반(看板)** — 적시생산(JIT) 신호 시스템 — 에서 비롯해 Lean·Agile의 *칸반 방식*으로 이어진 계보를 따릅니다. 즉 **작업 흐름의 시각화**는 토요타 칸반에서 영감을 얻었습니다.
+> 단, 이 대시보드의 **고유한 부분(추가전용+id병합 동시기록 안전·무백엔드)** 은 토요타가 아니라 **이벤트 소싱/로그 구조** 계열 아이디어입니다. 토요타 = 보드/흐름 시각화의 뿌리, 동시성 설계 = 별개.
+
+## 왜 이렇게 만들었나
+여러 사람이 같은 파일을 편집하면 **쓰기 경쟁**이 납니다(둘이 열어서 둘 다 저장 → 하나가 덮어씀). 보통은 DB나 서버로 풀지만, 이건 **정적 HTML + 평면 JS 로그**로 남되 경쟁을 다르게 피합니다.
+- **추가만 한다** — `log-inquiry.py`는 `push({...})` 한 줄만 덧붙입니다.
+- **id로 접는다** — 보드가 로그를 왼→오로 접어(`Object.assign`) 뒤 줄이 앞 레코드의 해당 필드만 갱신.
+- **추가 순간만 잠근다** — OS 파일락(`msvcrt`/`fcntl`)으로 두 writer가 EOF에서 한 줄 잃는 것 방지.
+결과: 임의 개수의 세션이 동시에 접수→진행중→대기→완료를 기록해도 항상 일관된 화면으로 접힙니다.
+
+## 구성
+| 파일 | 역할 |
+|------|------|
+| `task-board.html` | 대시보드 화면(칸반 + 문의 보드). 더블클릭으로 열림. |
+| `tasks.md` | 태스크 정본(가상 샘플). |
+| `inquiry-log.js` | 추가전용 문의 푸시로그(가상 샘플). |
+| `log-inquiry.py` | 문의를 안전하게 덧붙이는 CLI. |
+| `docs/` | 비전·git 워크플로우 노트. |
+| `AGENTS.md` | 이 레포에서 작업하는 AI를 위한 안내. |
+
+## 빠른 시작
+```bash
+# 대시보드 열기 — task-board.html 더블클릭 (서버 불요)
+
+# 문의 한 건 기록
+python log-inquiry.py --new --type simple --q "사번 찾는 법?" --by alice --req "bob / sales"
+# → NEW id=INQ-260104-091500 status=received
+
+# 같은 id로 전이 (병합)
+python log-inquiry.py --id INQ-260104-091500 --status in-progress
+python log-inquiry.py --done --id INQ-260104-091500 --a "SU01D 주소탭에서 확인" --ref "#tcode-master"
+```
+`task-board.html`을 새로고침하면 반영됩니다.
+
+## 동시성 안전 원리 (핵심)
+```
+log-inquiry.py (writer A) ──┐                       inquiry-log.js (추가전용)
+log-inquiry.py (writer B) ──┤   추가 시 짧은 파일락 ►  push({id:7, status:"received"})
+log-inquiry.py (writer C) ──┘                        push({id:7, status:"in-progress"})
+                                                     push({id:9, status:"received"})
+                                                     push({id:7, status:"done", a:"..."})
+                                                              │
+                          task-board.html  ◄── id로 접기 (Object.assign, 순서대로)
+                                                              ▼
+                                            id 7 → {status:"done", a:"..."},  id 9 → {received}
+```
+어떤 레코드도 다시 쓰이지 않으므로 동시 writer가 서로를 덮어쓸 수 없습니다 — 최악의 경우라도 두 줄이 모두 남습니다.
+
+## 카드 폼 구조 (폼 수정 전 필독)
+두 카드 모두 **헤더(요약) + 클릭하면 펼쳐지는 상세** 패턴입니다.
+- **프로젝트 카드 `.card`** — `renderTasks()`로 렌더. 헤더: 분류칩·ID·요청자·제목 + 노란 `.next`(다음 액션). 클릭 → `.detail` 펼침(`.open` 토글).
+- **문의 카드 `.inq-card`** — `renderInquiries()`로 렌더. 헤더 `.inq-head`(항상 보임=클릭 영역): ▸캐럿 `.inq-cy` + 유형 배지 + INQ코드 + 요청자 칩 + 노란 `.inq-sum`(질문). `.inq-detail`(접힘): 답변 + 참조링크 + 날짜·기록자. 토글은 `#inq-board`에 **이벤트 위임**(재렌더에도 유지).
+
+**렌더 ≠ 데이터** (꼭 구분):
+
+| 카드 | 렌더 함수 | 데이터 출처 | 수정 방법 |
+|------|-----------|-------------|-----------|
+| 프로젝트 | `renderTasks()` | `TASKS` 배열(`task-board.html` 내) | `tasks.md`와 수기 동기화 (브라우저 편집은 localStorage만) |
+| 문의 | `renderInquiries()` | `INQUIRY_LOG`(`inquiry-log.js` 내) | **`log-inquiry.py`로만 추가** — 직접 편집 금지 |
+
+> ⚠️ 폼 수정 시 `.inq-sum`·`.inq-detail`·`.inq-cy` CSS와 `#inq-board` 토글 위임을 **함께** 유지하세요.
+
+## 적용하기
+- `task-board.html`의 `TASKS` 배열을 본인 업무로 교체(`tasks.md`와 동기화).
+- 상태/분류 색은 `<style>`과 `STATUSES` 배열에서 조정.
+- `log-inquiry.py`는 자기 옆 파일에 쓰므로 폴더째 옮겨도 동작.
+
+## 요구사항
+- 브라우저(대시보드는 단일 정적 파일).
+- `log-inquiry.py`용 Python 3.6+ (표준 라이브러리만 — 설치 불요).
+
+## 라이선스
+MIT — [LICENSE](LICENSE) 참고.
+
+---
+
+# English
+
+## What it is
+A server-less ops board that runs on one static HTML file plus a small Python helper. Two boards on one screen:
+- **Task kanban** — work in flight, grouped by status (received · in-progress · waiting · done).
+- **Inquiry board** — incoming inquiries in the same four columns.
+
+The trick: the inquiry log is **append-only + merged by id** — every update is a new line, and pushing the same id again merges its fields. No in-place edits, so concurrent writers never clobber each other.
+
+## Inspiration — Toyota Kanban
+The board form (work as **cards** flowing across status **columns**) traces its lineage to the **Toyota Production System's kanban (看板)** just-in-time signaling, which carried into the Lean/Agile *Kanban method*. So the **work-flow visualization is inspired by Toyota's kanban.**
+> That said, this dashboard's **distinctive part (append-only + id-merge concurrency safety, no backend)** is not from Toyota — it's closer to **event sourcing / log-structured** ideas. Toyota = the board/flow-visualization root; the concurrency design is its own thing.
+
 ## Why it's built this way
+A shared file that several people edit *will* hit write races (two open it, both save, one overwrites the other). The usual fix is a database or a server. This stays a **static HTML file + flat JS log** and sidesteps the race differently:
+- **Append-only.** `log-inquiry.py` only ever appends a `push({...})` line.
+- **Merge by id.** The board folds the log left-to-right (`Object.assign`), so a later `{id, status}` updates just those fields.
+- **Lock only the append.** A short OS lock (`msvcrt`/`fcntl`) stops two writers losing a line at EOF.
 
-A shared dashboard that several people edit *will* hit write races: two writers
-load the file, both save, one overwrites the other. The usual fix is a database
-or a server. This stays a **static HTML file + a flat JS log** — no backend — and
-sidesteps the race a different way:
-
-- **Append-only.** `log-inquiry.py` only ever *appends* a `push({...})` line.
-- **Merge by id.** The board folds the log left-to-right (`Object.assign`), so a
-  later `{id, status}` line updates just those fields of an earlier record.
-- **File lock on append.** A short OS lock (`msvcrt` / `fcntl`) around the append
-  prevents two writers from losing a line at EOF.
-
-The result: any number of sessions can record received → in-progress → waiting →
-done transitions concurrently, and the board always folds to a consistent view.
+The result: any number of sessions can record received → in-progress → waiting → done concurrently, and the board always folds to a consistent view.
 
 ## What's in it
-
-- **Task kanban** — `tasks.md` is the source of truth; cards are grouped by
-  status and colored by class (DEV / OPS / TS / ADM). Card status can be changed
-  in-browser (saved to `localStorage`) and **exported as a JSON diff** to sync
-  back to `tasks.md`.
-- **Inquiry board** — a 4-column board (received / in-progress / waiting / done)
-  folded from `inquiry-log.js`, newest first, with requester and type chips.
-- **`log-inquiry.py`** — the append-only, id-merging, lock-guarded logger.
+| File | Role |
+|------|------|
+| `task-board.html` | The dashboard UI (kanban + inquiry board). Open directly. |
+| `tasks.md` | Source of truth for tasks (fictional sample). |
+| `inquiry-log.js` | Append-only inquiry push log (fictional sample). |
+| `log-inquiry.py` | CLI to append/transition/close inquiries safely. |
+| `docs/` | Vision and git-workflow notes. |
+| `AGENTS.md` | Orientation for AI assistants working in this repo. |
 
 ## Quick start
-
 ```bash
-# open the dashboard (no build, no server needed)
-#   just open task-board.html in a browser
+# open the dashboard — double-click task-board.html (no server)
 
 # log a new inquiry
-python log-inquiry.py --new --type simple --q "How do I look up an employee number?" --by alice --req "bob / sales"
+python log-inquiry.py --new --type simple --q "How to find an employee number?" --by alice --req "bob / sales"
 # → NEW id=INQ-260104-091500 status=received
 
 # move it along (same id merges)
 python log-inquiry.py --id INQ-260104-091500 --status in-progress
 python log-inquiry.py --done --id INQ-260104-091500 --a "Use SU01D, address tab." --ref "#tcode-master"
 ```
-
-Refresh `task-board.html` to see the inquiry board update.
+Refresh `task-board.html` to see it update.
 
 ## How concurrency-safety works (the core idea)
-
 ```
 log-inquiry.py (writer A) ──┐                       inquiry-log.js (append-only)
 log-inquiry.py (writer B) ──┤   short file-lock ►   push({id:7, status:"received"})
@@ -75,27 +154,12 @@ log-inquiry.py (writer C) ──┘   around append       push({id:7, status:"in
                                                               ▼
                                             id 7 → {status:"done", a:"..."},  id 9 → {received}
 ```
+No record is ever rewritten, so two simultaneous writers can't overwrite each other — worst case is two appended lines, both kept.
 
-No record is ever rewritten, so two simultaneous writers can't overwrite each
-other's work — the worst case is two new lines, both kept.
-
-## Files
-
-| File | Role |
-|------|------|
-| `task-board.html` | The dashboard UI (kanban + inquiry board). Open directly. |
-| `tasks.md` | Source of truth for tasks (fictional sample). |
-| `inquiry-log.js` | Append-only inquiry push log (fictional sample). |
-| `log-inquiry.py` | CLI to append/transition/close inquiries safely. |
-| `docs/` | Vision, git workflow, and AI-collaboration notes. |
-| `AGENTS.md` | Orientation for AI assistants working in this repo. |
-
-## Card form structure · 카드 폼 구조 (read before editing the form)
-
+## Card form structure (read before editing the form)
 Both card types use a **header (summary) + click-to-expand detail** pattern.
-
 - **Project card `.card`** — rendered by `renderTasks()`. Header: class chip · ID · requester · title + yellow `.next` (next action). Click → `.detail` expands (`.open` toggle).
-- **Inquiry card `.inq-card`** — rendered by `renderInquiries()`. Header `.inq-head` (always visible, click target): ▸caret `.inq-cy` + type badge + INQ id + requester chip + yellow `.inq-sum` (the question). `.inq-detail` (collapsed): answer + ref link + date/recorder. The toggle is wired via **event delegation on `#inq-board`**, so it keeps working across re-renders.
+- **Inquiry card `.inq-card`** — rendered by `renderInquiries()`. Header `.inq-head` (always visible, click target): ▸caret `.inq-cy` + type badge + INQ id + requester chip + yellow `.inq-sum` (the question). `.inq-detail` (collapsed): answer + ref link + date/recorder. Toggle is wired via **event delegation on `#inq-board`**, so it survives re-renders.
 
 **Render ≠ data** (keep these straight):
 
@@ -104,22 +168,16 @@ Both card types use a **header (summary) + click-to-expand detail** pattern.
 | Project | `renderTasks()` | `TASKS` array (in `task-board.html`) | sync with `tasks.md` by hand; browser edits are localStorage-only |
 | Inquiry | `renderInquiries()` | `INQUIRY_LOG` (in `inquiry-log.js`) | **append via `log-inquiry.py` only** — never hand-edit |
 
-> ⚠️ If you change the form, keep the `.inq-sum` / `.inq-detail` / `.inq-cy` CSS and the `#inq-board` toggle delegation **together** — they are one set.
-
-**한국어** — 두 카드 모두 **헤더(요약) + 클릭하면 펼쳐지는 상세** 패턴입니다. 프로젝트 카드 `.card`는 `renderTasks()`, 문의 카드 `.inq-card`는 `renderInquiries()`로 렌더하며, 문의 토글은 `#inq-board` **이벤트 위임**(재렌더에도 유지). **렌더 ≠ 데이터**: 프로젝트=`TASKS` 배열(↔ `tasks.md` 수기 동기화, 브라우저 편집은 localStorage만), 문의=`INQUIRY_LOG`(`log-inquiry.py`로만 추가, 직접 편집 금지). 폼 수정 시 `.inq-sum`·`.inq-detail`·`.inq-cy` CSS와 `#inq-board` 토글 위임을 함께 유지하세요.
+> ⚠️ If you change the form, keep the `.inq-sum` / `.inq-detail` / `.inq-cy` CSS and the `#inq-board` toggle delegation **together**.
 
 ## Adapting it
-
-- Edit the `TASKS` array in `task-board.html` (keep it in sync with `tasks.md`),
-  or wire `tasks.md` parsing in if you prefer a single source.
+- Replace the `TASKS` array in `task-board.html` with your own (sync with `tasks.md`).
 - Change the status set / class colors in the `<style>` and the `STATUSES` array.
 - `log-inquiry.py` writes next to itself, so drop the folder anywhere and it works.
 
 ## Requirements
-
 - A browser (the dashboard is a single static file).
-- Python 3.6+ for `log-inquiry.py` (standard library only — no pip installs).
+- Python 3.6+ for `log-inquiry.py` (standard library only — no installs).
 
 ## License
-
 MIT — see [LICENSE](LICENSE).

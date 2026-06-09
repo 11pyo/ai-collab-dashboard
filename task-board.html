@@ -44,6 +44,16 @@ button.tool:hover { background: #f1f5f9; }
 #export { display: none; margin-top: 10px; }
 #export textarea { width: 100%; height: 120px; font-family: 'Consolas', monospace; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; }
 .empty { color: #cbd5e1; font-size: 12px; text-align: center; padding: 14px 0; }
+/* Inquiry card — header (summary) + click-to-expand detail (mirrors the project card pattern) */
+.inq-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,.05); overflow: hidden; }
+.inq-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 9px 11px; cursor: pointer; }
+.inq-head:hover { background: #f8fafc; }
+.inq-cy { color: #94a3b8; font-size: 11px; transition: transform .15s; }
+.inq-card.open .inq-cy { transform: rotate(90deg); }
+.inq-sum { flex-basis: 100%; font-weight: 600; color: #25324a; line-height: 1.4; margin-top: 2px; }
+.inq-detail { display: none; padding: 0 11px 10px; }
+.inq-card.open .inq-detail { display: block; }
+.inq-detail .meta { font-size: 11.5px; color: #94a3b8; margin-top: 6px; }
 </style>
 </head>
 <body>
@@ -179,23 +189,34 @@ function renderInquiries() {
     const cards = col.querySelector(".cards");
     if (!items.length) cards.innerHTML = `<div class="empty">—</div>`;
     items.forEach(i => {
+      // header (always visible, click target) + detail (collapsed). Mirrors the project card.
       const card = document.createElement("div");
-      card.className = "card";
+      card.className = "inq-card";
       card.innerHTML = `
-        <div class="top">
+        <div class="inq-head">
+          <span class="inq-cy">▸</span>
           ${i.type ? `<span class="chip type">${i.type}</span>` : ""}
           <span class="id">${i.id}</span>
           ${i.req ? `<span class="chip req">${i.req}</span>` : ""}
+          <span class="inq-sum">${i.q || ""}</span>
         </div>
-        <div class="title" style="font-weight:600">${i.q || ""}</div>
-        ${i.a ? `<div class="answer">${i.a}</div>` : ""}
-        ${i.ref ? `<div class="ref">↳ <a href="${i.ref}">${i.ref}</a></div>` : ""}
-        <div class="next" style="margin-top:6px">${i.date || ""}${i.by ? " · by " + i.by : ""}</div>`;
+        <div class="inq-detail">
+          ${i.a ? `<div class="answer">${i.a}</div>` : ""}
+          ${i.ref ? `<div class="ref">↳ <a href="${i.ref}">${i.ref}</a></div>` : ""}
+          <div class="meta">${i.date || ""}${i.by ? " · by " + i.by : ""}</div>
+        </div>`;
       cards.appendChild(card);
     });
     board.appendChild(col);
   });
 }
+
+// Toggle inquiry-card detail via event delegation on the board container, so it
+// keeps working across re-renders (the #inq-board element persists; only its children change).
+document.getElementById("inq-board").addEventListener("click", e => {
+  const head = e.target.closest(".inq-head");
+  if (head && head.parentElement) head.parentElement.classList.toggle("open");
+});
 
 renderTasks();
 renderInquiries();

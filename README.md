@@ -90,6 +90,24 @@ other's work — the worst case is two new lines, both kept.
 | `docs/` | Vision, git workflow, and AI-collaboration notes. |
 | `AGENTS.md` | Orientation for AI assistants working in this repo. |
 
+## Card form structure · 카드 폼 구조 (read before editing the form)
+
+Both card types use a **header (summary) + click-to-expand detail** pattern.
+
+- **Project card `.card`** — rendered by `renderTasks()`. Header: class chip · ID · requester · title + yellow `.next` (next action). Click → `.detail` expands (`.open` toggle).
+- **Inquiry card `.inq-card`** — rendered by `renderInquiries()`. Header `.inq-head` (always visible, click target): ▸caret `.inq-cy` + type badge + INQ id + requester chip + yellow `.inq-sum` (the question). `.inq-detail` (collapsed): answer + ref link + date/recorder. The toggle is wired via **event delegation on `#inq-board`**, so it keeps working across re-renders.
+
+**Render ≠ data** (keep these straight):
+
+| Card | Render fn | Data source | How to edit |
+|------|-----------|-------------|-------------|
+| Project | `renderTasks()` | `TASKS` array (in `task-board.html`) | sync with `tasks.md` by hand; browser edits are localStorage-only |
+| Inquiry | `renderInquiries()` | `INQUIRY_LOG` (in `inquiry-log.js`) | **append via `log-inquiry.py` only** — never hand-edit |
+
+> ⚠️ If you change the form, keep the `.inq-sum` / `.inq-detail` / `.inq-cy` CSS and the `#inq-board` toggle delegation **together** — they are one set.
+
+**한국어** — 두 카드 모두 **헤더(요약) + 클릭하면 펼쳐지는 상세** 패턴입니다. 프로젝트 카드 `.card`는 `renderTasks()`, 문의 카드 `.inq-card`는 `renderInquiries()`로 렌더하며, 문의 토글은 `#inq-board` **이벤트 위임**(재렌더에도 유지). **렌더 ≠ 데이터**: 프로젝트=`TASKS` 배열(↔ `tasks.md` 수기 동기화, 브라우저 편집은 localStorage만), 문의=`INQUIRY_LOG`(`log-inquiry.py`로만 추가, 직접 편집 금지). 폼 수정 시 `.inq-sum`·`.inq-detail`·`.inq-cy` CSS와 `#inq-board` 토글 위임을 함께 유지하세요.
+
 ## Adapting it
 
 - Edit the `TASKS` array in `task-board.html` (keep it in sync with `tasks.md`),

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ops Task & Inquiry Dashboard (Sample)</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', 'Malgun Gothic', sans-serif; font-size: 13px; background: #eef1f6; color: #25324a; padding-bottom: 40px; }
+header { background: #1a2744; color: #fff; padding: 14px 22px; position: sticky; top: 0; z-index: 50; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+header h1 { font-size: 17px; font-weight: 700; }
+header .sub { font-size: 11px; color: #9fb0cc; margin-top: 3px; }
+#demo { background: #fef3c7; color: #92400e; font-size: 12px; padding: 7px 22px; border-bottom: 1px solid #fcd34d; }
+.wrap { padding: 18px 22px; }
+.section-title { font-size: 14px; font-weight: 700; color: #1a2744; margin: 22px 0 10px; display: flex; align-items: center; gap: 10px; }
+.section-title .tools { margin-left: auto; display: flex; gap: 8px; }
+button.tool { font: inherit; font-size: 12px; background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+button.tool:hover { background: #f1f5f9; }
+.board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.col { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; min-height: 80px; }
+.col h3 { font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.col h3 .n { background: #e2e8f0; color: #475569; border-radius: 10px; padding: 0 7px; font-size: 11px; }
+.col.done { background: #f0fdf4; border-color: #bbf7d0; }
+.col.done .cards { max-height: 360px; overflow-y: auto; }
+.card { background: #fff; border: 1px solid #e2e8f0; border-left: 4px solid #94a3b8; border-radius: 8px; padding: 9px 11px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,.05); cursor: pointer; }
+.card:hover { box-shadow: 0 2px 6px rgba(0,0,0,.12); }
+.card .top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 5px; }
+.card .id { font-family: 'Consolas', monospace; font-weight: 700; font-size: 12px; }
+.card .title { font-weight: 600; line-height: 1.4; }
+.card .next { font-size: 11.5px; color: #64748b; margin-top: 5px; }
+.card .detail { font-size: 12px; color: #475569; margin-top: 7px; padding-top: 7px; border-top: 1px dashed #e2e8f0; line-height: 1.55; display: none; }
+.card.open .detail { display: block; }
+.chip { font-size: 10px; font-weight: 700; border-radius: 4px; padding: 1px 6px; }
+.chip.req { background: #eef2ff; color: #4338ca; font-weight: 600; }
+.chip.type { background: #f1f5f9; color: #475569; font-weight: 600; }
+.c-DEV { background: #dbeafe; color: #1e40af; } .bl-DEV { border-left-color: #3b82f6; }
+.c-OPS { background: #d1fae5; color: #065f46; } .bl-OPS { border-left-color: #10b981; }
+.c-TS  { background: #ffedd5; color: #9a3412; } .bl-TS  { border-left-color: #f97316; }
+.c-ADM { background: #f3f4f6; color: #374151; } .bl-ADM { border-left-color: #9ca3af; }
+.card select { font: inherit; font-size: 11px; margin-top: 7px; border: 1px solid #cbd5e1; border-radius: 5px; padding: 2px 4px; }
+.ref a { color: #1d4ed8; text-decoration: none; font-size: 11px; }
+.answer { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 6px 8px; font-size: 12px; margin-top: 6px; color: #065f46; line-height: 1.5; }
+.hint { font-size: 11.5px; color: #94a3b8; margin-top: 6px; }
+#export { display: none; margin-top: 10px; }
+#export textarea { width: 100%; height: 120px; font-family: 'Consolas', monospace; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; }
+.empty { color: #cbd5e1; font-size: 12px; text-align: center; padding: 14px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Ops Task &amp; Inquiry Dashboard</h1>
+  <div class="sub">kanban for tasks · 4-column board for inquiries · multi-writer safe (append-only + id merge)</div>
+</header>
+<div id="demo">⚠️ <b>Sample / demo data.</b> Tasks and inquiries below are fictional. Card edits are saved to <b>this browser only</b> (localStorage); use “Export changes” to sync back to <code>tasks.md</code>.</div>
+
+<div class="wrap">
+
+  <!-- ───────── Task board ───────── -->
+  <div class="section-title">
+    🗂️ Task board <span style="font-weight:400;color:#94a3b8">(source of truth: tasks.md)</span>
+    <span class="tools">
+      <button class="tool" onclick="toggleExport()">⬇ Export changes</button>
+      <button class="tool" onclick="resetEdits()">↺ Reset edits</button>
+    </span>
+  </div>
+  <div class="board" id="task-board"></div>
+  <div id="export"><textarea id="export-text" readonly></textarea><div class="hint">Copy this JSON to apply your status changes back to <code>tasks.md</code> (the canonical source).</div></div>
+
+  <!-- ───────── Inquiry board ───────── -->
+  <div class="section-title" style="margin-top:30px;">
+    📋 Inquiry log <span style="font-weight:400;color:#94a3b8">(folded from inquiry-log.js — append-only push log, merged by id)</span>
+  </div>
+  <div class="board" id="inq-board"></div>
+  <div class="hint">Each inquiry is written by <code>log-inquiry.py</code> as append-only push lines; the same id pushed again merges its fields. This board replays and folds them by id, newest first.</div>
+
+</div>
+
+<script src="inquiry-log.js"></script>
+<script>
+// ── Task data (kept in sync with tasks.md) — fictional sample ──────────────
+const TASKS = [
+  {id:"DEV-001", cls:"DEV", title:"Add a unit-price column to the sales-proposal screen", req:"marketing",  status:"in-progress", next:"spec confirmed → implement, then transport", detail:"Show per-line unit price (NETPR) on the proposal screen for review."},
+  {id:"DEV-002", cls:"DEV", title:"Monthly billing automation report",                    req:"finance",    status:"received",    next:"scope the report fields", detail:"Auto-generate the monthly billing summary instead of a manual export."},
+  {id:"OPS-001", cls:"OPS", title:"Year-end org restructure: re-map sales proposals",      req:"sales ops",  status:"done",        next:"", detail:"Reassign open proposals to the new org units after restructuring. Result: 100% re-mapped & reconciled (2026-01-09)."},
+  {id:"OPS-002", cls:"OPS", title:"Monthly cloud-cost allocation filing",                  req:"IT / finance", status:"in-progress", next:"allocate across cost centers, then file", detail:"Split the monthly cloud subscription cost across cost centers and file the request."},
+  {id:"TS-001",  cls:"TS",  title:"Tax-invoice dump at month-end",                         req:"finance",    status:"waiting",     next:"waiting on Basis to grant ST22 access", detail:"ABAP dump when issuing a corrective tax invoice. Root-cause analysis blocked on access."},
+  {id:"ADM-001", cls:"ADM", title:"Quarterly access-control review report",                req:"IT GRC",     status:"received",    next:"pull the quarterly access list", detail:"Compile the quarterly user-access review for the controls report."},
+];
+
+const STATUSES = ["received", "in-progress", "waiting", "done"];
+const STATUS_LABEL = {received:"📥 Received", "in-progress":"🔵 In progress", waiting:"⏸️ Waiting", done:"✅ Done"};
+const LS_KEY = "ops-board-edits-v1";
+
+const edits = JSON.parse(localStorage.getItem(LS_KEY) || "{}");
+function saveEdits() { localStorage.setItem(LS_KEY, JSON.stringify(edits)); }
+function statusOf(t) { return edits[t.id] || t.status; }
+
+function renderTasks() {
+  const board = document.getElementById("task-board");
+  board.innerHTML = "";
+  STATUSES.forEach(st => {
+    const col = document.createElement("div");
+    col.className = "col" + (st === "done" ? " done" : "");
+    const items = TASKS.filter(t => statusOf(t) === st);
+    col.innerHTML = `<h3>${STATUS_LABEL[st]} <span class="n">${items.length}</span></h3><div class="cards"></div>`;
+    const cards = col.querySelector(".cards");
+    if (!items.length) cards.innerHTML = `<div class="empty">—</div>`;
+    items.forEach(t => {
+      const card = document.createElement("div");
+      card.className = `card bl-${t.cls}`;
+      const opts = STATUSES.map(s => `<option value="${s}"${s===statusOf(t)?" selected":""}>${s}</option>`).join("");
+      const edited = edits[t.id] && edits[t.id] !== t.status;
+      card.innerHTML = `
+        <div class="top">
+          <span class="chip c-${t.cls}">${t.cls}</span>
+          <span class="id">${t.id}</span>
+          ${t.req ? `<span class="chip req">${t.req}</span>` : ""}
+          ${edited ? `<span class="chip" style="background:#fde68a;color:#92400e">edited</span>` : ""}
+        </div>
+        <div class="title">${t.title}</div>
+        ${t.next ? `<div class="next">▸ ${t.next}</div>` : ""}
+        <div class="detail">${t.detail}</div>
+        <select onclick="event.stopPropagation()" onchange="moveTask('${t.id}', this.value)">${opts}</select>`;
+      card.addEventListener("click", () => card.classList.toggle("open"));
+      cards.appendChild(card);
+    });
+    board.appendChild(col);
+  });
+}
+
+function moveTask(id, status) {
+  const t = TASKS.find(x => x.id === id);
+  if (t && status === t.status) delete edits[id]; else edits[id] = status;
+  saveEdits();
+  renderTasks();
+}
+
+function toggleExport() {
+  const box = document.getElementById("export");
+  const show = box.style.display !== "block";
+  box.style.display = show ? "block" : "none";
+  if (show) {
+    const diff = TASKS.filter(t => edits[t.id] && edits[t.id] !== t.status)
+                      .map(t => ({id: t.id, from: t.status, to: edits[t.id]}));
+    document.getElementById("export-text").value =
+      diff.length ? JSON.stringify(diff, null, 2) : "// no changes — board matches tasks.md";
+  }
+}
+
+function resetEdits() {
+  if (!confirm("Discard all card edits saved in this browser and restore the tasks.md defaults?")) return;
+  for (const k in edits) delete edits[k];
+  saveEdits();
+  document.getElementById("export").style.display = "none";
+  renderTasks();
+}
+
+// ── Inquiry log: fold the append-only push log by id ──────────────────────
+function foldInquiries(log) {
+  const byId = new Map();
+  (log || []).forEach(rec => {
+    if (!rec || !rec.id) return;
+    byId.set(rec.id, Object.assign(byId.get(rec.id) || {}, rec));  // later push overrides/fills
+  });
+  return [...byId.values()];
+}
+
+const INQ_STATUS_LABEL = {received:"📥 Received", "in-progress":"🔵 In progress", waiting:"⏸️ Waiting", done:"✅ Done"};
+
+function renderInquiries() {
+  const board = document.getElementById("inq-board");
+  board.innerHTML = "";
+  const folded = foldInquiries(window.INQUIRY_LOG).reverse();  // newest first
+  STATUSES.forEach(st => {
+    const col = document.createElement("div");
+    col.className = "col" + (st === "done" ? " done" : "");
+    const items = folded.filter(i => (i.status || "received") === st);
+    col.innerHTML = `<h3>${INQ_STATUS_LABEL[st]} <span class="n">${items.length}</span></h3><div class="cards"></div>`;
+    const cards = col.querySelector(".cards");
+    if (!items.length) cards.innerHTML = `<div class="empty">—</div>`;
+    items.forEach(i => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <div class="top">
+          ${i.type ? `<span class="chip type">${i.type}</span>` : ""}
+          <span class="id">${i.id}</span>
+          ${i.req ? `<span class="chip req">${i.req}</span>` : ""}
+        </div>
+        <div class="title" style="font-weight:600">${i.q || ""}</div>
+        ${i.a ? `<div class="answer">${i.a}</div>` : ""}
+        ${i.ref ? `<div class="ref">↳ <a href="${i.ref}">${i.ref}</a></div>` : ""}
+        <div class="next" style="margin-top:6px">${i.date || ""}${i.by ? " · by " + i.by : ""}</div>`;
+      cards.appendChild(card);
+    });
+    board.appendChild(col);
+  });
+}
+
+renderTasks();
+renderInquiries();
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+# Lock file used by log-inquiry.py during concurrent appends
+inquiry-log.js.lock
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local agent/tooling state (never publish)
+.omc/
+.claude/
+.mcp.json
+_tmp/
+
+# Local-only private notes (your vision/ideas that should NOT be public)
+NOTES.local.md
+*.local.md

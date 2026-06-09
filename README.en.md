@@ -7,6 +7,10 @@
 > corrupting it.**
 > 📌 Portfolio/demo build — all data is fictional sample data.
 
+> 🌍 **Any team — not just IT.** The samples have an IT/ops flavor (classes DEV/OPS/TS/ADM, SAP-ish
+> examples), but it works for **any team's task/request tracking** — marketing, a research lab, customer
+> support, admin, etc. Swap the classes, statuses, and data for your own.
+
 ## 🤖 Build / run with an AI
 **No build step.** Clone, then either open `task-board.html` in a browser, or hand the folder to your
 AI assistant and say: **"Read `AGENTS.md` and run this."** A fresh AI session auto-onboards from

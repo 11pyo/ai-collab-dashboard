@@ -43,8 +43,9 @@ between human and AI.
 
 This is one half of a pair:
 
-- **[Third Brain — Indexable Knowledge Archive](../../third-brain-archive)** —
-  the *memory*: an AI-searchable archive of operational knowledge.
+- **[Third Brain — Indexable Knowledge Archive](https://github.com/11pyo/Third-Party-Brain)** —
+  the *memory*: an AI-searchable archive of operational knowledge (the `Third-Party-Brain` repo;
+  this dashboard is also mirrored there under `reference-implementation/dashboard/`).
 - **This dashboard** — the *workflow*: a concurrency-safe board for the work in
   flight.
 

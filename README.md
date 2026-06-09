@@ -19,6 +19,11 @@ the `log-inquiry.py` helper (standard library only — nothing to install).
 읽고 실행해줘"** 라고 하세요. 새 AI 세션이 `AGENTS.md` / `CLAUDE.md`로 자동 온보딩해 의도대로 구성합니다.
 **준비물:** 브라우저 + `log-inquiry.py`용 Python 3.6+ (표준 라이브러리만 — 설치할 것 없음).
 
+> **Make it yours · 내 것으로:** to adapt it, the AI only needs **your task list, your status set /
+> classification, and (optionally) your inquiries** — it swaps the sample `TASKS` / `inquiry-log.js`
+> for them; it won't invent data. · 적용하려면 AI는 **당신의 태스크 목록·상태 세트/분류·(선택)문의**만
+> 받으면 됩니다 — 가짜 샘플 자리에 그걸 넣을 뿐 지어내지 않습니다.
+
 ---
 
 # 한국어

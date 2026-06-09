@@ -56,5 +56,8 @@ Verify: 9 sample push lines fold to 5 inquiries; inquiry cards expand on header 
 - This is part of a pair with the knowledge archive **`11pyo/Third-Party-Brain`** (this dashboard is
   mirrored there under `reference-implementation/dashboard/`). · 지식 아카이브 `11pyo/Third-Party-Brain`과
   한 쌍(거기 `reference-implementation/dashboard/`에 미러본).
+- **Adapting it for a user?** Ask them for their **task list, status set/classification, and
+  (optionally) inquiries**, then swap the sample `TASKS` / `inquiry-log.js` — don't invent their data.
+  · **누군가에게 맞출 땐** 태스크·상태/분류·(선택)문의를 받아 샘플을 교체 — 데이터 임의 생성 금지.
 - `*.local.md` is git-ignored private notes — read for intent, never copy into committed files. ·
   `*.local.md`는 비공개(gitignore) — 의도 파악용, 커밋 파일에 옮기지 말 것.

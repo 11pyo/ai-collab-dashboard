@@ -52,6 +52,8 @@ writers can't clobber each other. `log-inquiry.py` appends behind a short OS fil
 
 **Standalone · 단독 동작:** this dashboard does **NOT** need the archive (`Third-Party-Brain`) — it runs fully on its own. The inquiry `ref` field can point to an archive anchor, but it's optional; with no archive those links are simply inert. · 아카이브 **없이 단독 완전 동작**. `ref`는 선택(아카이브 앵커 연결용), 아카이브가 없으면 그 링크는 비활성일 뿐.
 
+**✏️ Users can self-edit · 직접 수정 가능:** `task-board.html` has a built-in **Edit** button (server-less; edits the file via the File System Access API, else download). For small task tweaks/adds, point the user to it — no need to route every little edit through the AI. The inquiry log is still append-only via `log-inquiry.py`. · 카드 간단 수정·추가는 페이지의 **✏️ 편집** 버튼으로 사용자가 직접(클로드 불필요). 문의 로그는 여전히 `log-inquiry.py`로만.
+
 ## How to run / test · 실행·테스트
 ```bash
 start task-board.html         # Windows (or double-click)

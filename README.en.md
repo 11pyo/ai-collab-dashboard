@@ -21,6 +21,8 @@ open the file):
 - **Ⓑ Set it up for me** → the AI asks for your **task list, status set, and classification**, then
   fills them in (replacing the sample; it won't invent data).
 
+**✏️ Edit directly (no Claude, no server)** — the **Edit** button (bottom-right) lets you fix cards in place, **➕ add** / 🗑 delete tasks, and **💾 Save** writes back to the file. Chrome/Edge save in place; other browsers download. (Simple edits don't need to go through Claude.)
+
 **Standalone** — works fully **without the archive** (Third-Party-Brain); they're separate tools.
 **Prereqs:** a browser; Python 3.6+ for the `log-inquiry.py` helper (nothing to install).
 

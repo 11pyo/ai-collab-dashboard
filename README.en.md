@@ -23,6 +23,8 @@ open the file):
 
 **✏️ Edit directly (no Claude, no server)** — the **Edit** button (bottom-right) lets you fix cards in place, **➕ add** / 🗑 delete tasks, and **💾 Save** writes back to the file. Chrome/Edge save in place; other browsers download. (Simple edits don't need to go through Claude.)
 
+> 💡 **Nervous about "overwriting the existing file"?** It's not someone else's file — you're just **updating your own file with the edits you just made**; nothing is wiped, your changes are merged in. **The first time only**, pick `task-board.html` and confirm "overwrite"; after that it **remembers the location** and saves in one click (no folder-hunting). You can keep the page **open** while saving. If it still makes you uneasy, copy the original once as a backup the first time.
+
 **Standalone** — works fully **without the archive** (Third-Party-Brain); they're separate tools.
 **Prereqs:** a browser; Python 3.6+ for the `log-inquiry.py` helper (nothing to install).
 

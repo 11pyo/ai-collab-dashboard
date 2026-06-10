@@ -292,6 +292,17 @@ function toast(msg){
   t.textContent = msg; document.body.appendChild(t); setTimeout(()=>t.remove(), 2800);
 }
 
+// Remember the chosen file across saves AND sessions (IndexedDB), so after you pick
+// it once you never navigate folders again — it just saves back to the same file.
+function _fsOpen(){ return new Promise(r=>{ const q=indexedDB.open('tbfs',1); q.onupgradeneeded=()=>q.result.createObjectStore('h'); q.onsuccess=()=>r(q.result); q.onerror=()=>r(null); }); }
+async function _fsLoad(){ try{ const db=await _fsOpen(); if(!db) return null; return await new Promise(r=>{ const g=db.transaction('h').objectStore('h').get('f'); g.onsuccess=()=>r(g.result||null); g.onerror=()=>r(null); }); }catch(e){ return null; } }
+async function _fsStore(h){ try{ const db=await _fsOpen(); if(db) db.transaction('h','readwrite').objectStore('h').put(h,'f'); }catch(e){} }
+async function _pickFileHandle(name){
+  let h = window._fh || await _fsLoad();
+  if (h){ try{ const o={mode:'readwrite'}; if(await h.queryPermission(o)!=='granted' && await h.requestPermission(o)!=='granted') h=null; }catch(e){ h=null; } }
+  if (!h){ h = await window.showSaveFilePicker({ suggestedName:name, types:[{description:'HTML', accept:{'text/html':['.html']}}] }); await _fsStore(h); }
+  window._fh = h; return h;
+}
 async function saveBoardFile(){
   TASKS.forEach(t => t.status = statusOf(t));               // bake in-browser status edits
   for (const k in edits) delete edits[k]; saveEdits();
@@ -304,8 +315,8 @@ async function saveBoardFile(){
   html = html.replace(/const TASKS = \[[\s\S]*?\n\];/, () => literal);   // splice the updated TASKS back in
   if (window.showSaveFilePicker){
     try {
-      if (!window._boardHandle) window._boardHandle = await window.showSaveFilePicker({ suggestedName:"task-board.html", types:[{description:"HTML", accept:{"text/html":[".html"]}}] });
-      const w = await window._boardHandle.createWritable(); await w.write(html); await w.close();
+      const h = await _pickFileHandle("task-board.html");   // remembers the file (no folder-hunting after first pick)
+      const w = await h.createWritable(); await w.write(html); await w.close();
       toggleTaskEdit(false); toast("파일에 저장됨 ✓"); return;
     } catch(e){ if (e.name === "AbortError") return; }
   }
@@ -324,7 +335,7 @@ renderInquiries();
   <button id="btn-save" onclick="saveBoardFile()">💾 저장</button>
   <button id="btn-cancel" onclick="toggleTaskEdit(false)">취소</button>
 </div>
-<div id="edit-hint" data-noexport>✏️ <b>편집 모드</b> — 카드의 제목·내용을 클릭해 바로 고치고, <b>➕태스크</b>로 추가, 🗑로 삭제, <b>💾저장</b>으로 파일에 기록(서버 불필요). Chrome·Edge는 파일에 바로 저장 / 그 외는 다운로드. (문의 카드는 <code>log-inquiry.py</code>로 관리)</div>
+<div id="edit-hint" data-noexport>✏️ <b>편집 모드</b> — 카드의 제목·내용을 클릭해 바로 고치고, <b>➕태스크</b>로 추가, 🗑로 삭제, <b>💾저장</b>으로 파일에 기록(서버 불필요). Chrome·Edge는 파일에 바로 저장 / 그 외는 다운로드. <b>처음 한 번만</b> 파일을 골라 "덮어쓰기" 확인하면 이후엔 위치를 기억해 한 번에 저장 — 덮어쓰기는 내 편집을 내 파일에 반영하는 것이라 안전합니다. (문의 카드는 <code>log-inquiry.py</code>로 관리)</div>
 <div id="tadd-modal" data-noexport>
   <div id="tadd-card">
     <h3>➕ 태스크 추가</h3>

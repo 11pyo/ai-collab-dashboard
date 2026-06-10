@@ -11,7 +11,7 @@
 > examples), but it works for **any team's task/request tracking** — marketing, a research lab, customer
 > support, admin, etc. Swap the classes, statuses, and data for your own.
 
-> 🔗 **A pair** — this is the *workflow* half; the *memory* half is the knowledge archive **[Third-Party-Brain](https://github.com/11pyo/Third-Party-Brain)**.
+> 🧭 **Two repos (separate tools, both run now):** 🗂️ **ai-collab-dashboard** (this repo) = the task board · 🧠 **[Third-Party-Brain](https://github.com/11pyo/Third-Party-Brain)** = the AI-searchable knowledge brain. *For the big picture, start with the brain's README.*
 
 ## 🤖 Build / run with an AI
 **No build step.** Clone, then either open `task-board.html` in a browser, or hand the folder to your

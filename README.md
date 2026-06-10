@@ -8,7 +8,7 @@
 
 > 🌍 **어떤 팀에도 — IT 전용 아님.** 샘플이 IT/운영 느낌(분류 DEV/OPS/TS/ADM, SAP 예시)일 뿐, **어떤 팀의 업무·요청 추적에도** 씁니다 — 마케팅, 연구실, 고객지원, 행정 등. 분류·상태·데이터는 본인 업무에 맞게 바꾸면 됩니다.
 
-> 🔗 **한 쌍** — 이건 *워크플로우* 절반이고, *기억* 절반은 지식 아카이브 **[Third-Party-Brain](https://github.com/11pyo/Third-Party-Brain)** 입니다.
+> 🧭 **두 레포 (별개 도구, 둘 다 바로 돎):** 🗂️ **ai-collab-dashboard**(이 레포) = 작업 보드 · 🧠 **[Third-Party-Brain](https://github.com/11pyo/Third-Party-Brain)** = AI 검색 지식 뇌. *큰 그림은 브레인 README부터.*
 
 ## 🤖 AI로 바로 빌드·실행
 **빌드 단계 없음.** 클론한 뒤 `task-board.html`을 브라우저로 열거나, 폴더를 AI에게 주고 **"`AGENTS.md`

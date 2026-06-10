@@ -11,17 +11,18 @@
 > examples), but it works for **any team's task/request tracking** — marketing, a research lab, customer
 > support, admin, etc. Swap the classes, statuses, and data for your own.
 
-> 🧭 **Two repos (separate tools, both run now):** 🗂️ **ai-collab-dashboard** (this repo) = the task board · 🧠 **[Third-Party-Brain](https://github.com/11pyo/Third-Party-Brain)** = the AI-searchable knowledge brain. *For the big picture, start with the brain's README.*
+> 🧭 **Two repos (separate tools):** 🗂️ **ai-collab-dashboard** (this repo) = the task board · 🧠 **[Third-Party-Brain](https://github.com/11pyo/Third-Party-Brain)** = the AI-searchable knowledge brain. *This dashboard runs fully on its own — no archive required.*
 
 ## 🤖 Build / run with an AI
-**No build step.** Clone, then either open `task-board.html` in a browser, or hand the folder to your
-AI assistant and say: **"Read `AGENTS.md` and run this."** A fresh AI session auto-onboards from
-`AGENTS.md` / `CLAUDE.md` and sets it up exactly as intended. **Prereqs:** a browser; Python 3.6+ for
-the `log-inquiry.py` helper (standard library only — nothing to install).
+**✅ Demo included.** Clone and it **runs right away** with sample tasks + inquiries. Hand the folder to
+your AI and say **"Read `AGENTS.md` and set this up"** — it offers an easy choice (it won't just pop
+open the file):
+- **Ⓐ See the demo** → open `task-board.html` (explore the sample as-is).
+- **Ⓑ Set it up for me** → the AI asks for your **task list, status set, and classification**, then
+  fills them in (replacing the sample; it won't invent data).
 
-> **Make it yours:** to adapt it, the AI only needs **your task list, your status set / classification,
-> and (optionally) your inquiries** — it swaps the sample `TASKS` / `inquiry-log.js` for them; it won't
-> invent data.
+**Standalone** — works fully **without the archive** (Third-Party-Brain); they're separate tools.
+**Prereqs:** a browser; Python 3.6+ for the `log-inquiry.py` helper (nothing to install).
 
 ## What it is
 A server-less ops board that runs on one static HTML file plus a small Python helper. Two boards on one screen:

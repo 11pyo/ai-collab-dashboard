@@ -51,18 +51,24 @@
 | `AGENTS.md` | 이 레포에서 작업하는 AI를 위한 안내. |
 
 ## 빠른 시작
-```bash
-# 대시보드 열기 — task-board.html 더블클릭 (서버 불요)
+**① 대시보드 열기** — `task-board.html` 더블클릭 (서버 불요).
 
-# 문의 한 건 기록
+**② 문의 기록은 AI에게 말로 시키세요** — 명령어를 직접 칠 필요가 없습니다. AI에게 *"이 문의 접수해줘"* · *"진행중으로 바꿔줘"* · *"답변 달고 완료해줘"* 라고 하면, AI가 아래 `log-inquiry.py`를 **대신 실행**합니다. (이 도구의 핵심 = 사람이 CLI를 외우는 게 아니라 **AI가 대신 안전하게 기록**하는 것.)
+
+**③ 새로고침** — `task-board.html`을 새로고침하면 반영됩니다.
+
+<details><summary>↳ AI가 실제로 실행하는 명령 (직접 쓰고 싶을 때만 펼쳐 보세요)</summary>
+
+```bash
+# 새 문의 접수
 python log-inquiry.py --new --type simple --q "사번 찾는 법?" --by alice --req "bob / sales"
 # → NEW id=INQ-260104-091500 status=received
 
-# 같은 id로 전이 (병합)
+# 같은 id로 상태 전이 (자동 병합)
 python log-inquiry.py --id INQ-260104-091500 --status in-progress
 python log-inquiry.py --done --id INQ-260104-091500 --a "SU01D 주소탭에서 확인" --ref "#tcode-master"
 ```
-`task-board.html`을 새로고침하면 반영됩니다.
+</details>
 
 ## 동시성 안전 원리 (핵심)
 ```

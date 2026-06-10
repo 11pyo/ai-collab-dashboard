@@ -58,9 +58,15 @@ The result: any number of sessions can record received → in-progress → waiti
 | `AGENTS.md` | Orientation for AI assistants working in this repo. |
 
 ## Quick start
-```bash
-# open the dashboard — double-click task-board.html (no server)
+**① Open the dashboard** — double-click `task-board.html` (no server).
 
+**② Just tell your AI to log inquiries** — you don't type commands. Say *"log this inquiry"*, *"move it to in-progress"*, *"answer and close it"*, and the AI runs `log-inquiry.py` **for you**. (The whole point: you don't memorize a CLI — **the AI records it for you, safely.**)
+
+**③ Refresh** `task-board.html` to see it update.
+
+<details><summary>↳ What the AI actually runs (expand only if you'd rather type it yourself)</summary>
+
+```bash
 # log a new inquiry
 python log-inquiry.py --new --type simple --q "How to find an employee number?" --by alice --req "bob / sales"
 # → NEW id=INQ-260104-091500 status=received
@@ -69,7 +75,7 @@ python log-inquiry.py --new --type simple --q "How to find an employee number?" 
 python log-inquiry.py --id INQ-260104-091500 --status in-progress
 python log-inquiry.py --done --id INQ-260104-091500 --a "Use SU01D, address tab." --ref "#tcode-master"
 ```
-Refresh `task-board.html` to see it update.
+</details>
 
 ## How concurrency-safety works (the core idea)
 ```

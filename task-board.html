@@ -30,6 +30,13 @@ button.tool:hover { background: #f1f5f9; }
 .card .next { font-size: 11.5px; color: #64748b; margin-top: 5px; }
 .card .detail { font-size: 12px; color: #475569; margin-top: 7px; padding-top: 7px; border-top: 1px dashed #e2e8f0; line-height: 1.55; display: none; }
 .card.open .detail { display: block; }
+/* 🤖 AI context log (collapsed) — humans read the body above; AI assistants must read this too */
+.card .ailog { display: none; margin-top: 7px; padding-top: 6px; border-top: 1px dashed #e2e8f0; }
+.card.open .ailog { display: block; }
+.card .ailog summary { cursor: pointer; font-size: 11px; font-weight: 700; color: #64748b; user-select: none; }
+.card .ailog summary:hover { color: #334155; }
+.card .ailog summary .sub { font-weight: 400; color: #94a3b8; }
+.card .ailog .ailog-body { margin-top: 6px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 7px; padding: 7px 9px; font-size: 11px; line-height: 1.55; color: #475569; max-height: 300px; overflow: auto; white-space: pre-wrap; }
 .chip { font-size: 10px; font-weight: 700; border-radius: 4px; padding: 1px 6px; }
 .chip.req { background: #eef2ff; color: #4338ca; font-weight: 600; }
 .chip.type { background: #f1f5f9; color: #475569; font-weight: 600; }
@@ -116,7 +123,7 @@ body.editing #edit-hint { display: block; }
 <script>
 // ── Task data (kept in sync with tasks.md) — fictional sample ──────────────
 const TASKS = [
-  {id:"DEV-001", cls:"DEV", title:"Add a unit-price column to the sales-proposal screen", req:"marketing",  status:"in-progress", next:"spec confirmed → implement, then transport", detail:"Show per-line unit price (NETPR) on the proposal screen for review."},
+  {id:"DEV-001", cls:"DEV", title:"Add a unit-price column to the sales-proposal screen", req:"marketing",  status:"in-progress", next:"spec confirmed → implement, then transport", detail:"Show per-line unit price (NETPR) on the proposal screen for review.", ailog:"[sample] Time-series work log, lessons, and AI policies live here — AI assistants read this for full context; humans only need the body above.\n2026-01-05 spec'd with marketing — picked the price field by checking real data, not the field label.\n2026-01-07 dev build activated. Pitfall: activating the main program ≠ activating its includes.\n[AI policy] keep changes append-only — never touch existing logic; display toggle stays separate from data fetch."},
   {id:"DEV-002", cls:"DEV", title:"Monthly billing automation report",                    req:"finance",    status:"received",    next:"scope the report fields", detail:"Auto-generate the monthly billing summary instead of a manual export."},
   {id:"OPS-001", cls:"OPS", title:"Year-end org restructure: re-map sales proposals",      req:"sales ops",  status:"done",        next:"", detail:"Reassign open proposals to the new org units after restructuring. Result: 100% re-mapped & reconciled (2026-01-09)."},
   {id:"OPS-002", cls:"OPS", title:"Monthly cloud-cost allocation filing",                  req:"IT / finance", status:"in-progress", next:"allocate across cost centers, then file", detail:"Split the monthly cloud subscription cost across cost centers and file the request."},
@@ -160,6 +167,7 @@ function renderTasks() {
         <div class="title"${ce("title")}>${t.title}</div>
         ${(t.next || ed) ? `<div class="next"${ce("next")}>${ed ? (t.next || "") : "▸ " + t.next}</div>` : ""}
         <div class="detail"${ce("detail")}>${t.detail}</div>
+        ${(t.ailog || ed) ? `<details class="ailog" onclick="event.stopPropagation()"><summary>🤖 AI context log <span class="sub">— work log & AI decisions. Humans can skip; AI assistants: read this too.</span></summary><div class="ailog-body"${ce("ailog")}>${t.ailog || ""}</div></details>` : ""}
         <select onclick="event.stopPropagation()" onchange="moveTask('${t.id}', this.value)">${opts}</select>`;
       if (ed) card.classList.add("open");
       card.addEventListener("click", () => { if (!taskEditing) card.classList.toggle("open"); });

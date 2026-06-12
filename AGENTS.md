@@ -54,6 +54,8 @@ writers can't clobber each other. `log-inquiry.py` appends behind a short OS fil
 
 **✏️ Users can self-edit · 직접 수정 가능:** `task-board.html` has a built-in **Edit** button (server-less; edits the file via the File System Access API, else download). For small task tweaks/adds, point the user to it — no need to route every little edit through the AI. The inquiry log is still append-only via `log-inquiry.py`. · 카드 간단 수정·추가는 페이지의 **✏️ 편집** 버튼으로 사용자가 직접(클로드 불필요). 문의 로그는 여전히 `log-inquiry.py`로만.
 
+**🤖 Two-layer cards — you MUST read the collapsed AI log · 카드 2층 구조:** each task card = a **curated body** (`detail`, for humans) + a collapsed **🤖 AI context log** (`ailog` — time-series work log, lessons, policies the AI committed to). **When working on a card, AI assistants MUST read both** — the log holds settled decisions and pitfalls; skipping it causes re-asking and re-inventing. Humans only need the body. Updating a card: **append** new events to `ailog` (never compress or delete — the AI needs verbatim context), and rewrite `detail`/`next` to the clean current state for humans. · 카드 = **본문**(`detail`·사람용) + 접힘 **`ailog`**(시계열 로그·교훈·AI 방침). **AI는 카드 작업 시 둘 다 반드시 정독**(로그에 기확정 사항·함정 — 안 읽으면 재질문·재발명). 사람은 본문까지만. 갱신 = `ailog`에 시계열 **append(축약·삭제 금지)** + 본문·next는 현재 상태로 재정리.
+
 ## How to run / test · 실행·테스트
 ```bash
 start task-board.html         # Windows (or double-click)

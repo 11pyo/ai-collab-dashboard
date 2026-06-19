@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ops Task & Inquiry Dashboard (Sample)</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', 'Malgun Gothic', sans-serif; font-size: 13px; background: #eef1f6; color: #25324a; padding-bottom: 40px; }
+header { background: #1a2744; color: #fff; padding: 14px 22px; position: sticky; top: 0; z-index: 50; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+header h1 { font-size: 17px; font-weight: 700; }
+header .sub { font-size: 11px; color: #9fb0cc; margin-top: 3px; }
+#demo { background: #fef3c7; color: #92400e; font-size: 12px; padding: 7px 22px; border-bottom: 1px solid #fcd34d; }
+.wrap { padding: 18px 22px; }
+.section-title { font-size: 14px; font-weight: 700; color: #1a2744; margin: 22px 0 10px; display: flex; align-items: center; gap: 10px; }
+.section-title .tools { margin-left: auto; display: flex; gap: 8px; }
+button.tool { font: inherit; font-size: 12px; background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+button.tool:hover { background: #f1f5f9; }
+.board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.col { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; min-height: 80px; }
+.col h3 { font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.col h3 .n { background: #e2e8f0; color: #475569; border-radius: 10px; padding: 0 7px; font-size: 11px; }
+.col.done { background: #f0fdf4; border-color: #bbf7d0; }
+.col.done .cards { max-height: 360px; overflow-y: auto; }
+.card { background: #fff; border: 1px solid #e2e8f0; border-left: 4px solid #94a3b8; border-radius: 8px; padding: 9px 11px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,.05); cursor: pointer; }
+.card:hover { box-shadow: 0 2px 6px rgba(0,0,0,.12); }
+.card .top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 5px; }
+.card .id { font-family: 'Consolas', monospace; font-weight: 700; font-size: 12px; }
+.card .title { font-weight: 600; line-height: 1.4; }
+.card .next { font-size: 11.5px; color: #64748b; margin-top: 5px; }
+.card .detail { font-size: 12px; color: #475569; margin-top: 7px; padding-top: 7px; border-top: 1px dashed #e2e8f0; line-height: 1.55; display: none; }
+.card.open .detail { display: block; }
+/* 🤖 AI context log (collapsed) — humans read the body above; AI assistants must read this too */
+.card .ailog { display: none; margin-top: 7px; padding-top: 6px; border-top: 1px dashed #e2e8f0; }
+.card.open .ailog { display: block; }
+.card .ailog summary { cursor: pointer; font-size: 11px; font-weight: 700; color: #64748b; user-select: none; }
+.card .ailog summary:hover { color: #334155; }
+.card .ailog summary .sub { font-weight: 400; color: #94a3b8; }
+.card .ailog .ailog-body { margin-top: 6px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 7px; padding: 7px 9px; font-size: 11px; line-height: 1.55; color: #475569; max-height: 300px; overflow: auto; white-space: pre-wrap; }
+.chip { font-size: 10px; font-weight: 700; border-radius: 4px; padding: 1px 6px; }
+.chip.req { background: #eef2ff; color: #4338ca; font-weight: 600; }
+.chip.type { background: #f1f5f9; color: #475569; font-weight: 600; }
+.c-DEV { background: #dbeafe; color: #1e40af; } .bl-DEV { border-left-color: #3b82f6; }
+.c-OPS { background: #d1fae5; color: #065f46; } .bl-OPS { border-left-color: #10b981; }
+.c-TS  { background: #ffedd5; color: #9a3412; } .bl-TS  { border-left-color: #f97316; }
+.c-ADM { background: #f3f4f6; color: #374151; } .bl-ADM { border-left-color: #9ca3af; }
+.card select { font: inherit; font-size: 11px; margin-top: 7px; border: 1px solid #cbd5e1; border-radius: 5px; padding: 2px 4px; }
+.ref a { color: #1d4ed8; text-decoration: none; font-size: 11px; }
+.answer { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 6px 8px; font-size: 12px; margin-top: 6px; color: #065f46; line-height: 1.5; }
+.hint { font-size: 11.5px; color: #94a3b8; margin-top: 6px; }
+#export { display: none; margin-top: 10px; }
+#export textarea { width: 100%; height: 120px; font-family: 'Consolas', monospace; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; }
+.empty { color: #cbd5e1; font-size: 12px; text-align: center; padding: 14px 0; }
+/* ── Edit mode (server-less; saves via File System Access API, else downloads) ── */
+#edit-fab { position: fixed; bottom: 22px; right: 22px; z-index: 1000; display: flex; gap: 8px; }
+#edit-fab button { font: inherit; font-size: 13px; font-weight: 700; border: none; border-radius: 24px; padding: 10px 16px; cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,.2); }
+#btn-edit { background: #1d4ed8; color: #fff; }
+#btn-add, #btn-save, #btn-cancel { display: none; }
+#btn-add { background: #0ea5e9; color: #fff; }
+#btn-save { background: #16a34a; color: #fff; }
+#btn-cancel { background: #e2e8f0; color: #334155; }
+body.editing #btn-edit { display: none; }
+body.editing #btn-add, body.editing #btn-save, body.editing #btn-cancel { display: inline-block; }
+body.editing [contenteditable="true"] { outline: 1px dashed #93c5fd; border-radius: 4px; min-width: 24px; }
+body.editing [contenteditable="true"]:focus { outline: 2px solid #3b82f6; background: #eff6ff; }
+.del-btn { margin-left: auto; background: none; border: none; cursor: pointer; font-size: 13px; opacity: .6; }
+.del-btn:hover { opacity: 1; }
+#edit-hint { position: fixed; bottom: 22px; left: 22px; z-index: 1000; background: #1e293b; color: #fff; font-size: 12px; padding: 8px 12px; border-radius: 8px; display: none; max-width: 340px; line-height: 1.55; }
+body.editing #edit-hint { display: block; }
+#tadd-modal { position: fixed; inset: 0; background: rgba(15,23,42,.5); z-index: 1100; display: none; align-items: center; justify-content: center; }
+#tadd-modal.open { display: flex; }
+#tadd-card { background: #fff; border-radius: 12px; padding: 22px; width: 460px; max-width: 92vw; box-shadow: 0 10px 40px rgba(0,0,0,.3); }
+#tadd-card h3 { font-size: 15px; margin-bottom: 6px; color: #1a2744; }
+#tadd-card label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin: 9px 0 4px; }
+#tadd-card input, #tadd-card textarea, #tadd-card select { width: 100%; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; font: inherit; font-size: 13px; }
+#tadd-card textarea { height: 64px; resize: vertical; }
+#tadd-card .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+#tadd-card .row { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
+#tadd-card .row button { font: inherit; font-weight: 700; border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer; }
+.toast { position: fixed; bottom: 70px; right: 22px; background: #16a34a; color: #fff; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; z-index: 1200; box-shadow: 0 4px 12px rgba(0,0,0,.2); }
+/* Inquiry card — header (summary) + click-to-expand detail (mirrors the project card pattern) */
+.inq-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,.05); overflow: hidden; }
+.inq-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 9px 11px; cursor: pointer; }
+.inq-head:hover { background: #f8fafc; }
+.inq-cy { color: #94a3b8; font-size: 11px; transition: transform .15s; }
+.inq-card.open .inq-cy { transform: rotate(90deg); }
+.inq-sum { flex-basis: 100%; font-weight: 600; color: #25324a; line-height: 1.4; margin-top: 2px; }
+.inq-detail { display: none; padding: 0 11px 10px; }
+.inq-card.open .inq-detail { display: block; }
+.inq-detail .meta { font-size: 11.5px; color: #94a3b8; margin-top: 6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Ops Task &amp; Inquiry Dashboard</h1>
+  <div class="sub">kanban for tasks · 4-column board for inquiries · multi-writer safe (append-only + id merge)</div>
+</header>
+<div id="demo">⚠️ <b>Sample / demo data.</b> Tasks and inquiries below are fictional. Card edits are saved to <b>this browser only</b> (localStorage); use “Export changes” to sync back to <code>tasks.md</code>.</div>
+
+<div class="wrap">
+
+  <!-- ───────── Task board ───────── -->
+  <div class="section-title">
+    🗂️ Task board <span style="font-weight:400;color:#94a3b8">(source of truth: tasks.md)</span>
+    <span class="tools">
+      <button class="tool" onclick="toggleExport()">⬇ Export changes</button>
+      <button class="tool" onclick="resetEdits()">↺ Reset edits</button>
+    </span>
+  </div>
+  <div class="board" id="task-board"></div>
+  <div id="export"><textarea id="export-text" readonly></textarea><div class="hint">Copy this JSON to apply your status changes back to <code>tasks.md</code> (the canonical source).</div></div>
+
+  <!-- ───────── Inquiry board ───────── -->
+  <div class="section-title" style="margin-top:30px;">
+    📋 Inquiry log <span style="font-weight:400;color:#94a3b8">(active = recent; past archived — v2 scaling demo)</span>
+    <button id="load-arch" onclick="loadArchive()" style="margin-left:10px;font-size:12px;padding:3px 10px;border:1px solid #94a3b8;border-radius:6px;background:#fff;cursor:pointer;">View past history (270+ archived) ▾</button>
+  </div>
+  <div id="arch-note" class="hint" style="color:#15803d;"></div>
+  <div class="board" id="inq-board"></div>
+  <div class="hint">Active log loads <b>inquiry-log.js</b> only (recent). Past half-years live in <code>inquiry-log-archive-*.js</code> and load on demand — the page stays light while history stays one click (and one Grep) away.</div>
+
+</div>
+
+<script src="inquiry-log.js"></script>
+<script>
+// ── Task data (kept in sync with tasks.md) — fictional sample ──────────────
+const TASKS = [
+  {id:"DEV-001", cls:"DEV", title:"Add a unit-price column to the sales-proposal screen", req:"marketing",  status:"in-progress", next:"spec confirmed → implement, then transport", detail:"Show per-line unit price (NETPR) on the proposal screen for review.", ailog:"[sample] Time-series work log, lessons, and AI policies live here — AI assistants read this for full context; humans only need the body above.\n2026-01-05 spec'd with marketing — picked the price field by checking real data, not the field label.\n2026-01-07 dev build activated. Pitfall: activating the main program ≠ activating its includes.\n[AI policy] keep changes append-only — never touch existing logic; display toggle stays separate from data fetch."},
+  {id:"DEV-002", cls:"DEV", title:"Monthly billing automation report",                    req:"finance",    status:"received",    next:"scope the report fields", detail:"Auto-generate the monthly billing summary instead of a manual export."},
+  {id:"OPS-001", cls:"OPS", title:"Year-end org restructure: re-map sales proposals",      req:"sales ops",  status:"done",        next:"", detail:"Reassign open proposals to the new org units after restructuring. Result: 100% re-mapped & reconciled (2026-01-09)."},
+  {id:"OPS-002", cls:"OPS", title:"Monthly cloud-cost allocation filing",                  req:"IT / finance", status:"in-progress", next:"allocate across cost centers, then file", detail:"Split the monthly cloud subscription cost across cost centers and file the request."},
+  {id:"TS-001",  cls:"TS",  title:"Tax-invoice dump at month-end",                         req:"finance",    status:"waiting",     next:"waiting on Basis to grant ST22 access", detail:"ABAP dump when issuing a corrective tax invoice. Root-cause analysis blocked on access."},
+  {id:"ADM-001", cls:"ADM", title:"Quarterly access-control review report",                req:"IT GRC",     status:"received",    next:"pull the quarterly access list", detail:"Compile the quarterly user-access review for the controls report."},
+];
+
+const STATUSES = ["received", "in-progress", "waiting", "done"];
+const STATUS_LABEL = {received:"📥 Received", "in-progress":"🔵 In progress", waiting:"⏸️ Waiting", done:"✅ Done"};
+const LS_KEY = "ops-board-edits-v1";
+
+const edits = JSON.parse(localStorage.getItem(LS_KEY) || "{}");
+function saveEdits() { localStorage.setItem(LS_KEY, JSON.stringify(edits)); }
+function statusOf(t) { return edits[t.id] || t.status; }
+
+function renderTasks() {
+  const board = document.getElementById("task-board");
+  board.innerHTML = "";
+  STATUSES.forEach(st => {
+    const col = document.createElement("div");
+    col.className = "col" + (st === "done" ? " done" : "");
+    const items = TASKS.filter(t => statusOf(t) === st);
+    col.innerHTML = `<h3>${STATUS_LABEL[st]} <span class="n">${items.length}</span></h3><div class="cards"></div>`;
+    const cards = col.querySelector(".cards");
+    if (!items.length) cards.innerHTML = `<div class="empty">—</div>`;
+    items.forEach(t => {
+      const card = document.createElement("div");
+      card.className = `card bl-${t.cls}`;
+      const opts = STATUSES.map(s => `<option value="${s}"${s===statusOf(t)?" selected":""}>${s}</option>`).join("");
+      const edited = edits[t.id] && edits[t.id] !== t.status;
+      const ed = taskEditing;
+      const ce = f => ed ? ` contenteditable="true" data-tid="${t.id}" data-field="${f}"` : "";
+      card.innerHTML = `
+        <div class="top">
+          <span class="chip c-${t.cls}">${t.cls}</span>
+          <span class="id">${t.id}</span>
+          ${(t.req || ed) ? `<span class="chip req"${ce("req")}>${t.req || ""}</span>` : ""}
+          ${edited ? `<span class="chip" style="background:#fde68a;color:#92400e">edited</span>` : ""}
+          ${ed ? `<button class="del-btn" title="삭제" onclick="event.stopPropagation();delTask('${t.id}')">🗑</button>` : ""}
+        </div>
+        <div class="title"${ce("title")}>${t.title}</div>
+        ${(t.next || ed) ? `<div class="next"${ce("next")}>${ed ? (t.next || "") : "▸ " + t.next}</div>` : ""}
+        <div class="detail"${ce("detail")}>${t.detail}</div>
+        ${(t.ailog || ed) ? `<details class="ailog" data-aid="${t.id}" onclick="event.stopPropagation()"><summary>🤖 AI context log <span class="sub">— work log & AI decisions. Humans can skip; AI assistants: read this too.</span></summary><div class="ailog-body"${ce("ailog")}>${ed ? (t.ailog || "") : ""}</div></details>` : ""}
+        <select onclick="event.stopPropagation()" onchange="moveTask('${t.id}', this.value)">${opts}</select>`;
+      if (ed) card.classList.add("open");
+      card.addEventListener("click", () => { if (!taskEditing) card.classList.toggle("open"); });
+      cards.appendChild(card);
+    });
+    board.appendChild(col);
+  });
+  // v2 Stage A: lazy-render ailog — inject text only when its <details> opens (keeps DOM light at scale)
+  board.querySelectorAll("details.ailog").forEach(d => {
+    d.addEventListener("toggle", () => {
+      if (!d.open || taskEditing) return;
+      const body = d.querySelector(".ailog-body");
+      if (body && !body.dataset.filled) {
+        const t = TASKS.find(x => x.id === d.dataset.aid);
+        body.textContent = (t && t.ailog) || "";
+        body.dataset.filled = "1";
+      }
+    });
+  });
+}
+
+function moveTask(id, status) {
+  const t = TASKS.find(x => x.id === id);
+  if (t && status === t.status) delete edits[id]; else edits[id] = status;
+  saveEdits();
+  renderTasks();
+}
+
+function toggleExport() {
+  const box = document.getElementById("export");
+  const show = box.style.display !== "block";
+  box.style.display = show ? "block" : "none";
+  if (show) {
+    const diff = TASKS.filter(t => edits[t.id] && edits[t.id] !== t.status)
+                      .map(t => ({id: t.id, from: t.status, to: edits[t.id]}));
+    document.getElementById("export-text").value =
+      diff.length ? JSON.stringify(diff, null, 2) : "// no changes — board matches tasks.md";
+  }
+}
+
+function resetEdits() {
+  if (!confirm("Discard all card edits saved in this browser and restore the tasks.md defaults?")) return;
+  for (const k in edits) delete edits[k];
+  saveEdits();
+  document.getElementById("export").style.display = "none";
+  renderTasks();
+}
+
+// ── Inquiry log: fold the append-only push log by id ──────────────────────
+function foldInquiries(log) {
+  const byId = new Map();
+  (log || []).forEach(rec => {
+    if (!rec || !rec.id) return;
+    byId.set(rec.id, Object.assign(byId.get(rec.id) || {}, rec));  // later push overrides/fills
+  });
+  return [...byId.values()];
+}
+
+// v2 Stage B: archived half-years load on demand; merged into the same INQUIRY_LOG array on load.
+let archiveLoaded = false;
+function loadArchive() {
+  if (archiveLoaded) return;
+  const files = ["inquiry-log-archive-2026H1.js", "inquiry-log-archive-2025H2.js"];
+  let left = files.length;
+  files.forEach(f => {
+    const s = document.createElement("script");
+    s.src = f;
+    s.onload  = () => { if (--left === 0) { archiveLoaded = true; renderInquiries();
+                          const b = document.getElementById("load-arch"); if (b) b.style.display = "none"; } };
+    s.onerror = () => { if (--left === 0) renderInquiries(); };
+    document.head.appendChild(s);
+  });
+}
+
+const INQ_STATUS_LABEL = {received:"📥 Received", "in-progress":"🔵 In progress", waiting:"⏸️ Waiting", done:"✅ Done"};
+
+function renderInquiries() {
+  const board = document.getElementById("inq-board");
+  board.innerHTML = "";
+  const folded = foldInquiries(window.INQUIRY_LOG).reverse();  // newest first
+  STATUSES.forEach(st => {
+    const col = document.createElement("div");
+    col.className = "col" + (st === "done" ? " done" : "");
+    const items = folded.filter(i => (i.status || "received") === st);
+    col.innerHTML = `<h3>${INQ_STATUS_LABEL[st]} <span class="n">${items.length}</span></h3><div class="cards"></div>`;
+    const cards = col.querySelector(".cards");
+    if (!items.length) cards.innerHTML = `<div class="empty">—</div>`;
+    items.forEach(i => {
+      // header (always visible, click target) + detail (collapsed). Mirrors the project card.
+      const card = document.createElement("div");
+      card.className = "inq-card";
+      card.innerHTML = `
+        <div class="inq-head">
+          <span class="inq-cy">▸</span>
+          ${i.type ? `<span class="chip type">${i.type}</span>` : ""}
+          <span class="id">${i.id}</span>
+          ${i.req ? `<span class="chip req">${i.req}</span>` : ""}
+          <span class="inq-sum">${i.q || ""}</span>
+        </div>
+        <div class="inq-detail">
+          ${i.a ? `<div class="answer">${i.a}</div>` : ""}
+          ${i.ref ? `<div class="ref">↳ <a href="${i.ref}">${i.ref}</a></div>` : ""}
+          <div class="meta">${i.date || ""}${i.by ? " · by " + i.by : ""}</div>
+        </div>`;
+      cards.appendChild(card);
+    });
+    board.appendChild(col);
+  });
+  const note = document.getElementById("arch-note");
+  if (note) {
+    const total = foldInquiries(window.INQUIRY_LOG).length;
+    note.textContent = archiveLoaded
+      ? ("Showing all history — " + total + " inquiries (active + archive).")
+      : ("Showing active only — " + total + " recent inquiries. Past is archived; click 'View past history' to load the rest.");
+  }
+}
+
+// Toggle inquiry-card detail via event delegation on the board container, so it
+// keeps working across re-renders (the #inq-board element persists; only its children change).
+document.getElementById("inq-board").addEventListener("click", e => {
+  const head = e.target.closest(".inq-head");
+  if (head && head.parentElement) head.parentElement.classList.toggle("open");
+});
+
+// ── Server-less edit mode for the task board (TASKS lives in this file) ──
+// Save uses the File System Access API (Chrome/Edge write back in place); other
+// browsers download the updated task-board.html. No server, no Claude needed.
+let taskEditing = false;
+function toggleTaskEdit(on){ taskEditing = on; document.body.classList.toggle("editing", on); renderTasks(); }
+
+// write contenteditable changes back into the TASKS model on blur
+document.getElementById("task-board").addEventListener("blur", e => {
+  const el = e.target; if (!el.dataset || !el.dataset.tid) return;
+  const t = TASKS.find(x => x.id === el.dataset.tid);
+  if (t) t[el.dataset.field] = el.textContent.trim();
+}, true);
+
+function delTask(id){
+  if (!confirm("이 카드를 삭제할까요?")) return;
+  const i = TASKS.findIndex(t => t.id === id); if (i >= 0) TASKS.splice(i, 1);
+  delete edits[id]; saveEdits(); renderTasks();
+}
+
+function openTaskAdd(){
+  document.getElementById("ta-status").innerHTML = STATUSES.map(s=>`<option>${s}</option>`).join("");
+  ["ta-id","ta-title","ta-req","ta-next","ta-detail"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("tadd-modal").classList.add("open");
+}
+function closeTaskAdd(){ document.getElementById("tadd-modal").classList.remove("open"); }
+function addTask(){
+  const title = document.getElementById("ta-title").value.trim();
+  if (!title){ alert("제목을 입력하세요"); return; }
+  const cls = document.getElementById("ta-cls").value;
+  const id = document.getElementById("ta-id").value.trim() || (cls + "-" + String(Date.now()).slice(-4));
+  TASKS.push({ id, cls, title,
+    req: document.getElementById("ta-req").value.trim(),
+    status: document.getElementById("ta-status").value,
+    next: document.getElementById("ta-next").value.trim(),
+    detail: document.getElementById("ta-detail").value.trim() });
+  closeTaskAdd(); renderTasks(); toast("추가됨 ✓ — 💾저장으로 파일에 기록하세요");
+}
+
+function toast(msg){
+  const t = document.createElement("div"); t.className="toast"; t.setAttribute("data-noexport","");
+  t.textContent = msg; document.body.appendChild(t); setTimeout(()=>t.remove(), 2800);
+}
+
+// Remember the chosen file across saves AND sessions (IndexedDB), so after you pick
+// it once you never navigate folders again — it just saves back to the same file.
+// ⚠ The handle key is app-unique (_FS_KEY). A shared key ('f') once collided with the
+// archive editor in the same folder (file:// pages share one IndexedDB), so an archive
+// save silently overwrote task-board.html. Key isolation + filename validation prevent it.
+const _FS_KEY='acd-board', _FS_NAME='task-board.html';
+function _fsOpen(){ return new Promise(r=>{ const q=indexedDB.open('tbfs',1); q.onupgradeneeded=()=>q.result.createObjectStore('h'); q.onsuccess=()=>r(q.result); q.onerror=()=>r(null); }); }
+async function _fsLoad(){ try{ const db=await _fsOpen(); if(!db) return null; return await new Promise(r=>{ const g=db.transaction('h').objectStore('h').get(_FS_KEY); g.onsuccess=()=>r(g.result||null); g.onerror=()=>r(null); }); }catch(e){ return null; } }
+async function _fsStore(h){ try{ const db=await _fsOpen(); if(db) db.transaction('h','readwrite').objectStore('h').put(h,_FS_KEY); }catch(e){} }
+async function _fsForget(){ window._fh=null; try{ const db=await _fsOpen(); if(db) db.transaction('h','readwrite').objectStore('h').delete(_FS_KEY); }catch(e){} }
+async function _pickFileHandle(name){
+  let h = window._fh || await _fsLoad();
+  if (h && h.name !== name) h = null;   // stale/foreign handle (e.g. old shared key) → re-pick
+  if (h){ try{ const o={mode:'readwrite'}; if(await h.queryPermission(o)!=='granted' && await h.requestPermission(o)!=='granted') h=null; }catch(e){ h=null; } }
+  if (!h){
+    h = await window.showSaveFilePicker({ id:_FS_KEY, startIn:'documents', suggestedName:name, types:[{description:'HTML', accept:{'text/html':['.html']}}] });
+    if (h.name !== name) toast('⚠ 선택한 파일명이 '+name+' 이 아닙니다 — 저장 위치를 확인하세요');
+    await _fsStore(h);
+  }
+  window._fh = h; return h;
+}
+async function saveBoardFile(){
+  TASKS.forEach(t => t.status = statusOf(t));               // bake in-browser status edits
+  for (const k in edits) delete edits[k]; saveEdits();
+  // Save-stamp: lets the next load detect "my last save never landed in this file".
+  const stamp = 'sv-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,7);
+  const literal = "const TASKS = " + JSON.stringify(TASKS, null, 2) + ";";
+  const doc = document.documentElement.cloneNode(true);
+  doc.setAttribute('data-saved', stamp);
+  doc.querySelectorAll("[data-noexport]").forEach(el=>el.remove());
+  doc.querySelectorAll("[contenteditable]").forEach(el=>el.removeAttribute("contenteditable"));
+  const b = doc.querySelector("body"); if (b) b.classList.remove("editing");
+  let html = "<!DOCTYPE html>\n" + doc.outerHTML + "\n";
+  html = html.replace(/const TASKS = \[[\s\S]*?\n\];/, () => literal);   // splice the updated TASKS back in
+  if (window.showSaveFilePicker){
+    try {
+      const h = await _pickFileHandle(_FS_NAME);   // remembers the file (no folder-hunting after first pick)
+      const w = await h.createWritable(); await w.write(html); await w.close();
+      const f = await h.getFile();                 // round-trip check: did the bytes land?
+      if (f.size !== new Blob([html]).size){ toast('⚠ 저장 검증 실패 — 기록된 크기가 다릅니다. 다시 시도하세요'); return; }
+      try{ localStorage.setItem('acd-board-saved-stamp', stamp); }catch(_e){}
+      toggleTaskEdit(false); toast('파일에 저장됨 ✓ ('+h.name+')'); return;
+    } catch(e){
+      if (e.name === "AbortError"){ toast('⚠ 저장 취소됨 — 파일에 기록되지 않았습니다'); return; }   // never fail silently
+      toast('⚠ 직접 저장 실패('+e.name+') — 다운로드로 대체합니다');
+    }
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([html],{type:"text/html"})); a.download="task-board.html"; a.click();
+  try{ localStorage.setItem('acd-board-saved-stamp', stamp); }catch(_e){}
+  toggleTaskEdit(false); toast("다운로드됨 — 원본 task-board.html에 덮어쓰세요");
+}
+// On load: warn if our last save-stamp is missing from this file (save went elsewhere).
+(function(){
+  try{
+    const want = localStorage.getItem('acd-board-saved-stamp');
+    if (!want || document.documentElement.getAttribute('data-saved')===want) return;
+    const d = document.createElement('div'); d.setAttribute('data-noexport','');
+    d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:#7c2d12;color:#fff;padding:10px 16px;font-size:13px;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap';
+    d.innerHTML='⚠ <b>마지막 💾저장이 이 파일에 반영되어 있지 않습니다.</b> 저장이 다른 위치의 파일로 갔을 수 있어요.';
+    const btn=document.createElement('button'); btn.textContent='저장 위치 재선택';
+    btn.style.cssText='background:#fff;color:#7c2d12;border:0;border-radius:6px;padding:4px 10px;cursor:pointer;font-weight:700';
+    btn.onclick=async()=>{ await _fsForget(); localStorage.removeItem('acd-board-saved-stamp'); d.remove(); toast('기억한 저장 위치를 지웠습니다 — 다음 💾저장 때 다시 선택'); };
+    const x=document.createElement('button'); x.textContent='확인(닫기)';
+    x.style.cssText='background:transparent;color:#fff;border:1px solid #ffffff88;border-radius:6px;padding:4px 10px;cursor:pointer';
+    x.onclick=()=>{ localStorage.removeItem('acd-board-saved-stamp'); d.remove(); };
+    d.append(btn,x); document.body.appendChild(d);
+  }catch(e){}
+})();
+
+renderTasks();
+renderInquiries();
+</script>
+
+<div id="edit-fab" data-noexport>
+  <button id="btn-edit" onclick="toggleTaskEdit(true)" title="서버 없이 직접 편집">✏️ 편집</button>
+  <button id="btn-add" onclick="openTaskAdd()">➕ 태스크</button>
+  <button id="btn-save" onclick="saveBoardFile()">💾 저장</button>
+  <button id="btn-cancel" onclick="toggleTaskEdit(false)">취소</button>
+</div>
+<div id="edit-hint" data-noexport>✏️ <b>편집 모드</b> — 카드의 제목·내용을 클릭해 바로 고치고, <b>➕태스크</b>로 추가, 🗑로 삭제, <b>💾저장</b>으로 파일에 기록(서버 불필요). Chrome·Edge는 파일에 바로 저장 / 그 외는 다운로드. <b>처음 한 번만</b> 파일을 골라 "덮어쓰기" 확인하면 이후엔 위치를 기억해 한 번에 저장 — 덮어쓰기는 내 편집을 내 파일에 반영하는 것이라 안전합니다. (문의 카드는 <code>log-inquiry.py</code>로 관리)</div>
+<div id="tadd-modal" data-noexport>
+  <div id="tadd-card">
+    <h3>➕ 태스크 추가</h3>
+    <div class="grid2">
+      <div><label>분류</label><select id="ta-cls"><option>DEV</option><option>OPS</option><option>TS</option><option>ADM</option></select></div>
+      <div><label>ID (비우면 자동)</label><input id="ta-id" placeholder="예) DEV-003"></div>
+    </div>
+    <label>제목</label><input id="ta-title" placeholder="예) 월간 보고서 자동화">
+    <div class="grid2">
+      <div><label>요청자</label><input id="ta-req" placeholder="예) finance"></div>
+      <div><label>상태</label><select id="ta-status"></select></div>
+    </div>
+    <label>다음 액션</label><input id="ta-next" placeholder="예) 요건 정리">
+    <label>상세</label><textarea id="ta-detail" placeholder="설명"></textarea>
+    <div class="row">
+      <button onclick="closeTaskAdd()" style="background:#e2e8f0;color:#334155">취소</button>
+      <button onclick="addTask()" style="background:#1d4ed8;color:#fff">추가</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

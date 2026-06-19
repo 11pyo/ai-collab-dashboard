@@ -2,6 +2,11 @@
 
 > Newest first. · 최신이 맨 위. Board/engine feature changes are recorded here (mirrored from the internal original this repo was anonymized from).
 
+## 2026-06-18 — 🧪 v2 scaling demo: verified reference implementation · v2 데모 검증 구현
+
+- **Change · 개선**: `demo-v2/` implements and **verifies** the SCALING.md stages on bulk fictional data (315 inquiries / 891 pushes): **Stage A** lazy-render ailog (0 → 454 chars on open), **Stage B** active/archive split (board loads 45 active → "view past history" merges to 315), helper **`--compact`** (126 → 45 pushes) and **`--archive-before`** (moves done items out of active). v1 would load ~129 KB every time; v2 loads 18.4 KB active. Includes `gen-demo-data.py` (seeded, reproducible) and a README.
+- `demo-v2/`에 SCALING.md 단계들을 대량 허구 데이터(315건 / 891 push)로 구현·**검증**: **Stage A**(ailog 지연 렌더, 펼침 시 0→454자), **Stage B**(활성/아카이브 분리 — 보드 45건 → '과거 보기'로 315건 병합), 헬퍼 **`--compact`**(126→45)·**`--archive-before`**. v1=매번 ~129KB, v2=활성 18.4KB. 재현 생성기 `gen-demo-data.py`·README 포함.
+
 ## 2026-06-18 — 📈 Scaling guide: data-growth upgrade blueprint · 데이터 누적 업그레이드 설계도
 
 - **Problem · 문제**: as the inquiry log and card AI-logs accumulate, this single-file board can get heavy. Naive optimization (hiding/splitting past data) risks cutting an AI assistant off from past context — fatal when work is fully AI-delegated.

@@ -3,6 +3,7 @@
 > This dashboard is a backend-free single HTML file. As data accumulates (inquiry-log pushes, the AI-reference-log text on cards), the browser can get heavy.
 > This document is the blueprint for **when (thresholds) · what · how** to upgrade. When a threshold is reached, have the AI generate v2 based on this document.
 > Core premise: this system assumes **all work is delegated to AI while a human supervises**. Therefore every optimization must **never cut off the AI's access to context**.
+> ✅ **Verified**: Stages A·B and the helper (`--compact`/`--archive-before`) are implemented and verified in [`demo-v2/`](../demo-v2/) on bulk fictional data (315 inquiries / 891 pushes).
 
 ---
 

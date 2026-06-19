@@ -246,10 +246,20 @@ function loadArchive() {
 
 const INQ_STATUS_LABEL = {received:"📥 Received", "in-progress":"🔵 In progress", waiting:"⏸️ Waiting", done:"✅ Done"};
 
+function esc(s) {                 // HTML-escape untrusted log text before innerHTML (stored-XSS guard)
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function safeRef(ref) {           // allow only in-page anchors or http(s); blocks javascript:/data: URIs
+  return (ref && /^(#|https?:\/\/)/.test(ref)) ? ref : "";
+}
+
 function renderInquiries() {
   const board = document.getElementById("inq-board");
   board.innerHTML = "";
-  const folded = foldInquiries(window.INQUIRY_LOG).reverse();  // newest first
+  // newest-first by real date (id as tiebreak) — robust regardless of which file (active/archive) loaded when
+  const folded = foldInquiries(window.INQUIRY_LOG)
+    .sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.id || "").localeCompare(a.id || ""));
   STATUSES.forEach(st => {
     const col = document.createElement("div");
     col.className = "col" + (st === "done" ? " done" : "");
@@ -261,18 +271,19 @@ function renderInquiries() {
       // header (always visible, click target) + detail (collapsed). Mirrors the project card.
       const card = document.createElement("div");
       card.className = "inq-card";
+      const ref = safeRef(i.ref);
       card.innerHTML = `
         <div class="inq-head">
           <span class="inq-cy">▸</span>
-          ${i.type ? `<span class="chip type">${i.type}</span>` : ""}
-          <span class="id">${i.id}</span>
-          ${i.req ? `<span class="chip req">${i.req}</span>` : ""}
-          <span class="inq-sum">${i.q || ""}</span>
+          ${i.type ? `<span class="chip type">${esc(i.type)}</span>` : ""}
+          <span class="id">${esc(i.id)}</span>
+          ${i.req ? `<span class="chip req">${esc(i.req)}</span>` : ""}
+          <span class="inq-sum">${esc(i.q)}</span>
         </div>
         <div class="inq-detail">
-          ${i.a ? `<div class="answer">${i.a}</div>` : ""}
-          ${i.ref ? `<div class="ref">↳ <a href="${i.ref}">${i.ref}</a></div>` : ""}
-          <div class="meta">${i.date || ""}${i.by ? " · by " + i.by : ""}</div>
+          ${i.a ? `<div class="answer">${esc(i.a)}</div>` : ""}
+          ${ref ? `<div class="ref">↳ <a href="${esc(ref)}">${esc(ref)}</a></div>` : ""}
+          <div class="meta">${esc(i.date)}${i.by ? " · by " + esc(i.by) : ""}</div>
         </div>`;
       cards.appendChild(card);
     });
@@ -280,7 +291,7 @@ function renderInquiries() {
   });
   const note = document.getElementById("arch-note");
   if (note) {
-    const total = foldInquiries(window.INQUIRY_LOG).length;
+    const total = folded.length;   // reuse the already-folded list (no second O(n) fold)
     note.textContent = archiveLoaded
       ? ("Showing all history — " + total + " inquiries (active + archive).")
       : ("Showing active only — " + total + " recent inquiries. Past is archived; click 'View past history' to load the rest.");

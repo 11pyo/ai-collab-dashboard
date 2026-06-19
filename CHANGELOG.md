@@ -2,6 +2,11 @@
 
 > Newest first. · 최신이 맨 위. Board/engine feature changes are recorded here (mirrored from the internal original this repo was anonymized from).
 
+## 2026-06-18 — 🔒 v2 demo hardening: fix data-loss parser, ordering, XSS (post-review) · 리뷰 후 보강
+
+- **Fix · 수정**: an adversarial multi-agent review found a **data-loss bug** — `log-inquiry.py`'s regex push-parser dropped any record whose value contained `});`, so `--compact`/`--archive-before` (which rewrite the file) silently lost data. Replaced with a line-based parser that **aborts (fatal) on any unparseable push line** instead of dropping it; maintenance ops now take the same lock as `append()` and write atomically (`tmp`→`os.replace`); `--archive-before` is append-only to archives (no lossy re-read), buckets by each item's own half-year, validates the date, and skips id-less/undated rows. Board: the inquiry list now sorts by real date (id tiebreak) so "view past history" stays newest-first (was a `.reverse()` regression); inquiry text is HTML-escaped and `ref` is scheme-checked (blocks `javascript:`); removed a redundant double-fold. All re-verified.
+- 적대적 멀티에이전트 리뷰가 **데이터 손실 버그** 적발 — 정규식 파서가 값에 `});` 포함 레코드를 삭제해 `--compact`/`--archive-before` 재작성 시 침묵 손실. 라인 기반 파서로 교체(파싱 실패 시 **치명 종료**, 침묵 삭제 금지)·유지보수 op를 `append()`와 동일 락+원자적 쓰기·아카이브 append-only(손실 재적용 제거)·항목 날짜 반기 버킷·날짜 검증·id없음/날짜없음 스킵. 보드: 문의 목록을 실제 날짜 정렬로(‘과거 보기’ 최신순 유지, `.reverse()` 회귀 수정)·HTML 이스케이프+ref 스킴 검증(`javascript:` 차단)·이중 fold 제거. 전부 재검증.
+
 ## 2026-06-18 — 🧪 v2 scaling demo: verified reference implementation · v2 데모 검증 구현
 
 - **Change · 개선**: `demo-v2/` implements and **verifies** the SCALING.md stages on bulk fictional data (315 inquiries / 891 pushes): **Stage A** lazy-render ailog (0 → 454 chars on open), **Stage B** active/archive split (board loads 45 active → "view past history" merges to 315), helper **`--compact`** (126 → 45 pushes) and **`--archive-before`** (moves done items out of active). v1 would load ~129 KB every time; v2 loads 18.4 KB active. Includes `gen-demo-data.py` (seeded, reproducible) and a README.

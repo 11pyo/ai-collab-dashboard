@@ -41,6 +41,8 @@ writers can't clobber each other. `log-inquiry.py` appends behind a short OS fil
 5. Status set is fixed: `received → in-progress → waiting → done`; `waiting` must say what it waits on. · 상태 4종 고정, 대기는 사유 명시.
 6. **Card form:** keep the `.inq-sum`/`.inq-detail`/`.inq-cy` CSS and the `#inq-board` toggle delegation together (see README "Card form structure"). · 폼 수정 시 CSS+위임 함께 유지.
 7. **Commits: 11pyo only — do NOT add a `Co-Authored-By` trailer.** · 커밋은 11pyo 단독, Co-Authored-By 금지.
+8. **Scaling guardrail (render local, search global):** history search must cover **all** `inquiry-log*.js` (active + archives); completion/transition writes go to the **active `inquiry-log.js` only**, via `log-inquiry.py`. · 이력 검색은 `inquiry-log*.js` 전체(활성+아카이브), 완료·전이 쓰기는 **활성 `inquiry-log.js`에만**(헬퍼 경유).
+9. **Maintenance ops rewrite files** (`--compact`/`--archive-before`): a push line that won't parse is **FATAL — never drop a record silently**; ops take the append lock and write atomically. See `docs/SCALING.md`. · 유지보수 op는 파일 재작성 — 파싱 실패는 **치명(레코드 침묵 삭제 금지)**, 락+원자적 쓰기.
 
 ## When asked to "set this up" · "셋업해줘" 하면 — offer a choice, don't just open the file
 **Don't just pop open `task-board.html`.** Offer two paths:

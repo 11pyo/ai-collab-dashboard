@@ -94,59 +94,118 @@ ap.add_argument("--compact", action="store_true",
                 help="v2: rewrite the active log, folding each id's pushes into one current-state line")
 x = ap.parse_args()
 
-# ── v2 maintenance ops (these REWRITE files; not append-only — run at a quiet time) ──
+# ── v2 maintenance ops (these REWRITE files; guarded by the SAME lock as append()) ──
 import re
+from collections import defaultdict
+
 def _read_pushes(path):
+    """Parse pushes SAFELY. The helper and the generator always write ONE push per line,
+    so we parse line-by-line and json.loads the object between 'push(' and the trailing ');'.
+    A line that looks like a push but does NOT parse is a FATAL error (never dropped silently)
+    — this is what prevents data loss on values that contain '});' or span multiple lines."""
     if not os.path.exists(path):
         return []
-    txt = open(path, encoding="utf-8").read()
-    out = []
-    for m in re.finditer(r"window\.INQUIRY_LOG\.push\((\{.*?\})\);", txt):
+    PFX, SFX = "window.INQUIRY_LOG.push(", ");"
+    out, bad = [], 0
+    for ln in open(path, encoding="utf-8").read().splitlines():
+        s = ln.strip()
+        if PFX not in s:
+            continue
+        if not (s.startswith(PFX) and s.endswith(SFX)):
+            bad += 1                      # multi-line / malformed push line — refuse to guess
+            continue
         try:
-            out.append(json.loads(m.group(1)))
+            obj = json.loads(s[len(PFX):-len(SFX)])
         except Exception:
-            pass
+            bad += 1
+            continue
+        if isinstance(obj, dict):
+            out.append(obj)
+        else:
+            bad += 1
+    if bad:
+        sys.exit("[fatal] %s: %d push line(s) could not be parsed safely — aborting to avoid "
+                 "data loss. Fix the file (one push per line) or report a bug." % (os.path.basename(path), bad))
     return out
 
 def _fold(rows):
     by, order = {}, []
     for r in rows:
-        if not r.get("id"):
+        rid = r.get("id")
+        if not rid:
             continue
-        if r["id"] not in by:
-            order.append(r["id"]); by[r["id"]] = {}
-        by[r["id"]].update(r)
+        if rid not in by:
+            order.append(rid); by[rid] = {}
+        by[rid].update(r)
     return [by[i] for i in order]
 
+def _serialize(rows, header):
+    parts = ["window.INQUIRY_LOG = window.INQUIRY_LOG || [];\n"] if header else []
+    parts += ["window.INQUIRY_LOG.push(" + json.dumps(r, ensure_ascii=False) + ");\n" for r in rows]
+    return "".join(parts)
+
 def _write_log(path, rows):
-    with open(path, "w", encoding="utf-8") as f:
-        f.write("window.INQUIRY_LOG = window.INQUIRY_LOG || [];\n")
-        for r in rows:
-            f.write("window.INQUIRY_LOG.push(" + json.dumps(r, ensure_ascii=False) + ");\n")
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        f.write(_serialize(rows, header=True))
+    os.replace(tmp, path)                 # atomic on the same volume
+
+def _append_log(path, rows):              # append-only: never re-read/rewrite the archive
+    new = not os.path.exists(path)
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(_serialize(rows, header=new))
+
+def _locked(fn):
+    lockpath = LOG + ".lock"
+    try:
+        with open(lockpath, "a+") as lf:
+            _lock(lf)
+            try:
+                return fn()
+            finally:
+                _unlock(lf)
+    except SystemExit:
+        raise
+    except Exception:
+        return fn()                       # if locking is unavailable, still run
 
 if x.compact:
-    rows = _read_pushes(LOG)
-    folded = _fold(rows)
-    _write_log(LOG, folded)
-    print("COMPACT %s: %d pushes -> %d (one per id)" % (os.path.basename(LOG), len(rows), len(folded)))
+    def _do():
+        rows = _read_pushes(LOG)
+        folded = _fold(rows)
+        _write_log(LOG, folded)
+        return len(rows), len(folded)
+    n, k = _locked(_do)
+    print("COMPACT %s: %d pushes -> %d (one per id)" % (os.path.basename(LOG), n, k))
     sys.exit(0)
 
 if x.archive_before:
     cutoff = x.archive_before
-    rows = _read_pushes(LOG)
-    folded = _fold(rows)
-    move_ids = {r["id"] for r in folded if r.get("status") == "done" and (r.get("date") or "") < cutoff}
-    if not move_ids:
-        sys.exit("[archive] nothing to move (no DONE items dated before %s)" % cutoff)
-    mm = int(cutoff[5:7]) if len(cutoff) >= 7 else 1
-    tag = "%sH%d" % (cutoff[:4], 1 if mm <= 6 else 2)
-    arch = os.path.join(os.path.dirname(LOG), "inquiry-log-archive-%s.js" % tag)
-    keep  = [r for r in rows if r["id"] not in move_ids]
-    moved = [r for r in rows if r["id"] in move_ids]
-    _write_log(arch, _read_pushes(arch) + moved)   # append to (or create) the archive
-    _write_log(LOG, keep)                           # rewrite active without the moved ids
-    print("ARCHIVE -> %s : moved %d ids (%d pushes); active now %d pushes"
-          % (os.path.basename(arch), len(move_ids), len(moved), len(keep)))
+    if not re.match(r"^\d{4}-\d{2}-\d{2}$", cutoff):
+        sys.exit("[error] --archive-before must be YYYY-MM-DD")
+    def _hy(d):                           # half-year tag from an item's OWN date
+        return "%sH%d" % (d[:4], 1 if int(d[5:7]) <= 6 else 2)
+    def _do():
+        rows = _read_pushes(LOG)
+        folded = _fold(rows)
+        date_of = {r["id"]: (r.get("date") or "") for r in folded}
+        move_ids = {rid for rid in date_of
+                    if date_of[rid] and date_of[rid] < cutoff
+                    and next(r for r in folded if r["id"] == rid).get("status") == "done"}
+        if not move_ids:
+            sys.exit("[archive] nothing to move (no DONE items dated before %s)" % cutoff)
+        keep  = [r for r in rows if r.get("id") not in move_ids]
+        moved = [r for r in rows if r.get("id") in move_ids]
+        buckets = defaultdict(list)       # group moved pushes by each item's own half-year
+        for r in moved:
+            buckets[_hy(date_of[r["id"]])].append(r)
+        for tag, rs in sorted(buckets.items()):
+            _append_log(os.path.join(os.path.dirname(LOG), "inquiry-log-archive-%s.js" % tag), rs)
+        _write_log(LOG, keep)
+        return len(move_ids), sorted(buckets), len(keep)
+    n, tags, kept = _locked(_do)
+    print("ARCHIVE: moved %d ids into %s ; active now %d pushes"
+          % (n, ", ".join("inquiry-log-archive-%s.js" % t for t in tags), kept))
     sys.exit(0)
 
 if x.status and x.status not in VALID:

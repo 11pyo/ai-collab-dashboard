@@ -2,6 +2,12 @@
 
 > Newest first. · 최신이 맨 위. Board/engine feature changes are recorded here (mirrored from the internal original this repo was anonymized from).
 
+## 2026-06-18 — 📈 Scaling guide: data-growth upgrade blueprint · 데이터 누적 업그레이드 설계도
+
+- **Problem · 문제**: as the inquiry log and card AI-logs accumulate, this single-file board can get heavy. Naive optimization (hiding/splitting past data) risks cutting an AI assistant off from past context — fatal when work is fully AI-delegated.
+- **Change · 개선**: added `docs/SCALING.md` (+ `docs/SCALING.en.md`) — a staged upgrade blueprint governed by one principle, **"Render local, search global"**: hide the past only in the human view, keep the AI's data access whole. Includes thresholds (do-nothing → lazy-render ailog → archive completed → compaction → virtualized Done column), exact change points with code snippets, and a guardrail checklist so history search stays global and metrics stay cumulative.
+- 문의 로그·카드 AI로그가 쌓이면 단일 파일 보드가 무거워질 수 있는데, 섣부른 최적화는 AI의 과거 맥락 접근을 끊을 수 있습니다(전적 AI 위임 시 치명적). `docs/SCALING.md`(+영문) 추가 — **"표시는 분리, 검색은 통합"** 원칙의 단계별 업그레이드 설계도. 임계점·정확한 변경점·코드 스니펫·가드레일 체크리스트(과거 검색은 전체 대상, 지표는 누적 합산) 포함.
+
 ## 2026-06-12 — 🤖 AI context log: two-layer cards · 카드 2층 구조
 
 - **Problem · 문제**: long-running dev cards accumulate a time-series of fixes, insights, and AI-committed policies. You can't shorten it — the AI needs the full, verbatim context to stay accurate — but humans drown in it.

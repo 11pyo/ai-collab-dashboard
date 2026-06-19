@@ -67,6 +67,7 @@ Verify: 9 sample push lines fold to 5 inquiries; inquiry cards expand on header 
 검증: 푸시 9줄 → 문의 5건으로 접힘, 헤더 클릭 시 펼침, 콘솔 에러 0.
 
 ## Notes · 비고
+- **Scaling/perf · 확장성**: when data grows large, follow `docs/SCALING.md` — a staged upgrade blueprint under **"render local, search global"** (hide the past only in the human view, keep the AI's access to context whole). · 데이터가 커지면 `docs/SCALING.md`의 단계별 업그레이드를 따른다(**표시는 분리, 검색은 통합** — 사람 화면만 과거를 숨기고 AI의 맥락 접근은 온전히).
 - This is part of a pair with the knowledge archive **`11pyo/Third-Party-Brain`** (this dashboard is
   mirrored there under `reference-implementation/dashboard/`). · 지식 아카이브 `11pyo/Third-Party-Brain`과
   한 쌍(거기 `reference-implementation/dashboard/`에 미러본).

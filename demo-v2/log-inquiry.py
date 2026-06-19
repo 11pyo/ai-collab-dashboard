@@ -64,17 +64,20 @@ def append(obj):
     ensure()
     line = "window.INQUIRY_LOG.push(" + json.dumps(obj, ensure_ascii=False) + ");\n"
     lockpath = LOG + ".lock"
+    written = False
     try:
         with open(lockpath, "a+") as lf:        # lock gate (content irrelevant)
             _lock(lf)
             try:
                 with open(LOG, "a", encoding="utf-8") as f:
                     f.write(line)               # atomic append while holding the lock
+                written = True
             finally:
                 _unlock(lf)
     except Exception:
-        with open(LOG, "a", encoding="utf-8") as f:   # even if locking fails, keep the record
-            f.write(line)
+        if not written:                          # only fall back if the locked write never happened (no double-write)
+            with open(LOG, "a", encoding="utf-8") as f:
+                f.write(line)
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--new",  action="store_true", help="receive: log a new inquiry")

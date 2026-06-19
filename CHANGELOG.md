@@ -2,6 +2,11 @@
 
 > Newest first. · 최신이 맨 위. Board/engine feature changes are recorded here (mirrored from the internal original this repo was anonymized from).
 
+## 2026-06-19 — 🧹 v2 demo low-severity cleanups · 마이너 보강
+
+- **Polish · 보강**: preserve task-card open/expanded state across re-renders (an expanded AI log stays open *and* filled after a status change, not just visually open); HTML-escape task-card fields too (not only inquiries); the "view past history" button now tolerates a partial archive load and retries only the missing file (no duplicate pushes); `append()` no longer risks a double-write if locking throws after the write succeeded. All re-verified.
+- 재렌더(상태 변경 등) 시 태스크 카드 펼침·AI로그 펼침 상태 보존(시각뿐 아니라 본문까지 채워진 채 유지); 태스크 카드 필드도 HTML 이스케이프; '과거 보기' 버튼이 부분 로드를 견디고 실패분만 재시도(중복 push 없음); `append()` 락 예외 시 이중 쓰기 방지. 전부 재검증.
+
 ## 2026-06-18 — 🔒 v2 demo hardening: fix data-loss parser, ordering, XSS (post-review) · 리뷰 후 보강
 
 - **Fix · 수정**: an adversarial multi-agent review found a **data-loss bug** — `log-inquiry.py`'s regex push-parser dropped any record whose value contained `});`, so `--compact`/`--archive-before` (which rewrite the file) silently lost data. Replaced with a line-based parser that **aborts (fatal) on any unparseable push line** instead of dropping it; maintenance ops now take the same lock as `append()` and write atomically (`tmp`→`os.replace`); `--archive-before` is append-only to archives (no lossy re-read), buckets by each item's own half-year, validates the date, and skips id-less/undated rows. Board: the inquiry list now sorts by real date (id tiebreak) so "view past history" stays newest-first (was a `.reverse()` regression); inquiry text is HTML-escaped and `ref` is scheme-checked (blocks `javascript:`); removed a redundant double-fold. All re-verified.

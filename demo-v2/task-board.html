@@ -143,6 +143,9 @@ function statusOf(t) { return edits[t.id] || t.status; }
 
 function renderTasks() {
   const board = document.getElementById("task-board");
+  // preserve open state across re-render (status change / edit toggle / add / delete don't collapse cards)
+  const wasOpen = new Set([...board.querySelectorAll(".card.open")].map(c => c.dataset.id));
+  const wasLog  = new Set([...board.querySelectorAll("details.ailog[open]")].map(d => d.dataset.aid));
   board.innerHTML = "";
   STATUSES.forEach(st => {
     const col = document.createElement("div");
@@ -154,6 +157,7 @@ function renderTasks() {
     items.forEach(t => {
       const card = document.createElement("div");
       card.className = `card bl-${t.cls}`;
+      card.dataset.id = t.id;
       const opts = STATUSES.map(s => `<option value="${s}"${s===statusOf(t)?" selected":""}>${s}</option>`).join("");
       const edited = edits[t.id] && edits[t.id] !== t.status;
       const ed = taskEditing;
@@ -161,17 +165,17 @@ function renderTasks() {
       card.innerHTML = `
         <div class="top">
           <span class="chip c-${t.cls}">${t.cls}</span>
-          <span class="id">${t.id}</span>
-          ${(t.req || ed) ? `<span class="chip req"${ce("req")}>${t.req || ""}</span>` : ""}
+          <span class="id">${esc(t.id)}</span>
+          ${(t.req || ed) ? `<span class="chip req"${ce("req")}>${ed ? (t.req || "") : esc(t.req)}</span>` : ""}
           ${edited ? `<span class="chip" style="background:#fde68a;color:#92400e">edited</span>` : ""}
           ${ed ? `<button class="del-btn" title="삭제" onclick="event.stopPropagation();delTask('${t.id}')">🗑</button>` : ""}
         </div>
-        <div class="title"${ce("title")}>${t.title}</div>
-        ${(t.next || ed) ? `<div class="next"${ce("next")}>${ed ? (t.next || "") : "▸ " + t.next}</div>` : ""}
-        <div class="detail"${ce("detail")}>${t.detail}</div>
+        <div class="title"${ce("title")}>${ed ? t.title : esc(t.title)}</div>
+        ${(t.next || ed) ? `<div class="next"${ce("next")}>${ed ? (t.next || "") : "▸ " + esc(t.next)}</div>` : ""}
+        <div class="detail"${ce("detail")}>${ed ? t.detail : esc(t.detail)}</div>
         ${(t.ailog || ed) ? `<details class="ailog" data-aid="${t.id}" onclick="event.stopPropagation()"><summary>🤖 AI context log <span class="sub">— work log & AI decisions. Humans can skip; AI assistants: read this too.</span></summary><div class="ailog-body"${ce("ailog")}>${ed ? (t.ailog || "") : ""}</div></details>` : ""}
         <select onclick="event.stopPropagation()" onchange="moveTask('${t.id}', this.value)">${opts}</select>`;
-      if (ed) card.classList.add("open");
+      if (ed || wasOpen.has(t.id)) card.classList.add("open");
       card.addEventListener("click", () => { if (!taskEditing) card.classList.toggle("open"); });
       cards.appendChild(card);
     });
@@ -179,15 +183,16 @@ function renderTasks() {
   });
   // v2 Stage A: lazy-render ailog — inject text only when its <details> opens (keeps DOM light at scale)
   board.querySelectorAll("details.ailog").forEach(d => {
-    d.addEventListener("toggle", () => {
-      if (!d.open || taskEditing) return;
+    const fill = () => {
       const body = d.querySelector(".ailog-body");
       if (body && !body.dataset.filled) {
         const t = TASKS.find(x => x.id === d.dataset.aid);
         body.textContent = (t && t.ailog) || "";
         body.dataset.filled = "1";
       }
-    });
+    };
+    d.addEventListener("toggle", () => { if (d.open && !taskEditing) fill(); });
+    if (wasLog.has(d.dataset.aid)) { d.open = true; fill(); }   // restore expansion + fill synchronously (don't rely on async toggle)
   });
 }
 
@@ -230,16 +235,24 @@ function foldInquiries(log) {
 
 // v2 Stage B: archived half-years load on demand; merged into the same INQUIRY_LOG array on load.
 let archiveLoaded = false;
+const ARCHIVE_FILES = ["inquiry-log-archive-2026H1.js", "inquiry-log-archive-2025H2.js"];
+const archLoaded = new Set();              // files already injected — never re-inject (avoids duplicate pushes)
 function loadArchive() {
-  if (archiveLoaded) return;
-  const files = ["inquiry-log-archive-2026H1.js", "inquiry-log-archive-2025H2.js"];
-  let left = files.length;
+  const files = ARCHIVE_FILES.filter(f => !archLoaded.has(f));
+  if (!files.length) return;
+  let left = files.length, failed = 0;
+  const finish = () => {
+    renderInquiries();
+    const b = document.getElementById("load-arch");
+    if (!b) return;
+    if (failed) { b.textContent = "Retry loading past history ⟳"; }   // partial load: keep button to retry only the rest
+    else { archiveLoaded = true; b.style.display = "none"; }
+  };
   files.forEach(f => {
     const s = document.createElement("script");
     s.src = f;
-    s.onload  = () => { if (--left === 0) { archiveLoaded = true; renderInquiries();
-                          const b = document.getElementById("load-arch"); if (b) b.style.display = "none"; } };
-    s.onerror = () => { if (--left === 0) renderInquiries(); };
+    s.onload  = () => { archLoaded.add(f); if (--left === 0) finish(); };
+    s.onerror = () => { failed++;          if (--left === 0) finish(); };
     document.head.appendChild(s);
   });
 }

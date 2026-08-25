@@ -2,6 +2,18 @@
 
 > Newest first. · 최신이 맨 위. Board/engine feature changes are recorded here (mirrored from the internal original this repo was anonymized from).
 
+## 2026-08-25 — 🧭 Session-start index + board-sync checker · 착수 인덱스·동기화 점검기
+
+- **Problem · 문제**: two failure modes that both stay silent. (1) `tasks.md` is the source of truth and the onboarding rule is "read it first" — but in the internal deployment this repo mirrors, it grew to ~650,000 characters / 2,250 lines, past what an AI assistant can hold in one context, so the rule became unfollowable while still being written down. (2) The same card lived in more than one hand-kept place, and cards added to the markdown but never to the board's `TASKS` array simply never rendered — repeatedly, over months. Nothing errored, so nobody noticed.
+- 둘 다 **조용히** 망가지는 실패였습니다. ①`tasks.md`가 65만자/2,250줄로 자라 "착수 시 정본을 먼저 읽어라"는 규칙이 물리적으로 실행 불가능해졌는데 규칙은 그대로 남아 있었고, ②같은 카드를 여러 곳에 손수 적다 보니 정본에만 추가되고 보드 `TASKS` 배열엔 빠진 카드가 몇 달째 화면에 안 뜨고 있었습니다. 아무것도 실패하지 않으니 아무도 몰랐습니다.
+- **Change · 개선**:
+  - **`gen-tasks-index.py` → `tasks-index.md`** — a generated table of contents holding only the open cards plus **each card's line range** in `tasks.md`, so a session reads the index and then pulls just the card it needs (`sed -n 'A,Bp' tasks.md`). Internal result: **650k chars → ~5k (about 1/130)**. The source of truth is never split.
+  - **`check-board-sync.py`** — cross-checks `tasks.md` against the `TASKS` array and **exits 1** on a card present in only one of them, or a status the card body contradicts. It deliberately **never fixes anything**: which side is true is a human call. Title-wording differences and empty AI logs are reported as notes, not failures, and "recurring" is treated as a cadence rather than a status.
+  - **One field, one source** — card metadata (status/requester/due/next) now has exactly one home: the `TASKS` array. AGENTS.md rule 4 was extended to forbid adding a third hand-kept copy.
+  - Both tools read either board dialect — strict JSON (as the save button writes it) or hand-written JS object literals — and match the `const TASKS = [` declaration by pattern, because a plain text search also hits prose inside a card's AI log that mentions the array.
+- `gen-tasks-index.py` → `tasks-index.md`: 살아있는 카드 + **카드별 라인 범위**만 담은 목차를 자동 생성(정본은 안 쪼갬, 내부 실측 65만자→약 5천자 ≒ 1/130). `check-board-sync.py`: 정본↔배열을 교차 대조해 한쪽에만 있는 카드·모순된 상태를 찾고 **종료코드 1**(자동수정 안 함 — 무엇이 사실인지는 사람 판단). 제목 문구 차이·빈 AI로그는 참고로만, '정기'는 상태가 아니라 반복성으로 취급. 카드 메타의 출처를 `TASKS` 배열 하나로 고정하고, 세 번째 수기 사본 금지를 AGENTS.md 규칙 4에 명시.
+- **Verified · 검증**: on this repo's sample data both run clean (6 cards, exit 0); injecting three kinds of drift — a card only in `tasks.md`, a card only in the array, and a contradicting status — reproduces all three findings and exit 1.
+
 ## 2026-06-19 — 🧹 v2 demo low-severity cleanups · 마이너 보강
 
 - **Polish · 보강**: preserve task-card open/expanded state across re-renders (an expanded AI log stays open *and* filled after a status change, not just visually open); HTML-escape task-card fields too (not only inquiries); the "view past history" button now tolerates a partial archive load and retries only the missing file (no duplicate pushes); `append()` no longer risks a double-write if locking throws after the write succeeded. All re-verified.

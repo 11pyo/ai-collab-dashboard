@@ -31,13 +31,17 @@ writers can't clobber each other. `log-inquiry.py` appends behind a short OS fil
 | `tasks.md` | source of truth for tasks · 태스크 정본 | yes (keep in sync with the `TASKS` array · `TASKS` 배열과 동기화) |
 | `inquiry-log.js` | append-only inquiry log · 추가전용 문의로그 | **no hand-edit · 직접편집 금지 → `log-inquiry.py`** |
 | `log-inquiry.py` | append/transition/close CLI · 문의 CLI | yes (preserve append-only+id-merge · 원리 유지) |
+| `tasks-index.md` | session-start index: open cards + each card's line range · 착수 인덱스 | **no hand-edit · 직접편집 금지 → `gen-tasks-index.py`** |
+| `gen-tasks-index.py` | builds `tasks-index.md` from `tasks.md` + the board array · 인덱스 생성기 | yes |
+| `check-board-sync.py` | cross-checks `tasks.md` vs the `TASKS` array; exit 1 on drift · 동기화 점검기 | yes (must never auto-fix · 자동수정 금지) |
 | `docs/` | vision · git notes · 비전·git 노트 | yes |
 
 ## Rules · 규칙 (절대)
 1. **Public repo → fictional sample data only.** No real names/customers/codes/secrets. · 공개 레포 → 가짜 샘플만. 실명·고객·코드·자격증명 금지.
 2. **Bilingual docs (KO + EN).** · 문서 한/영 병기.
 3. **Never hand-edit `inquiry-log.js`** — append via `log-inquiry.py`. · 문의로그 직접편집 금지.
-4. **Keep `tasks.md` and the `TASKS` array in sync.** · 정본과 배열 동기화.
+4. **Keep `tasks.md` and the `TASKS` array in sync** — verify with `python check-board-sync.py` (exit 1 = drift, and it deliberately never fixes anything for you). Re-run `python gen-tasks-index.py` after any card edit. · 정본과 배열 동기화 — `check-board-sync.py`로 검증(자동수정 안 함), 카드 수정 후 인덱스 재생성.
+   **Do not add a third hand-kept copy of card metadata** (e.g. a summary table at the top of `tasks.md`). One field, one source: narrative in `tasks.md`, structured metadata in the `TASKS` array. · 카드 메타를 세 번째로 손수 관리하는 사본(요약 표 등)을 만들지 말 것 — 한 필드 한 출처.
 5. Status set is fixed: `received → in-progress → waiting → done`; `waiting` must say what it waits on. · 상태 4종 고정, 대기는 사유 명시.
 6. **Card form:** keep the `.inq-sum`/`.inq-detail`/`.inq-cy` CSS and the `#inq-board` toggle delegation together (see README "Card form structure"). · 폼 수정 시 CSS+위임 함께 유지.
 7. **Commits: 11pyo only — do NOT add a `Co-Authored-By` trailer.** · 커밋은 11pyo 단독, Co-Authored-By 금지.
@@ -63,6 +67,8 @@ writers can't clobber each other. `log-inquiry.py` appends behind a short OS fil
 start task-board.html         # Windows (or double-click)
 python log-inquiry.py --new --type simple --q "test" --by alice
 python log-inquiry.py --done --id <printed-id> --a "resolved"
+python gen-tasks-index.py     # rebuild tasks-index.md · 인덱스 재생성
+python check-board-sync.py    # 0 = in sync, 1 = fix something · 동기화 점검
 # refresh task-board.html · 새로고침
 ```
 Verify: 9 sample push lines fold to 5 inquiries; inquiry cards expand on header click; no console errors.

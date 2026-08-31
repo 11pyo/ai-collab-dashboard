@@ -37,6 +37,12 @@ import sys
 BASE = os.path.dirname(os.path.abspath(__file__))
 TASKS_MD = os.path.join(BASE, "tasks.md")
 BOARD = os.path.join(BASE, "task-board.html")
+INDEX_MD = os.path.join(BASE, "tasks-index.md")
+
+# Index header line, e.g. "`tasks.md` 764,764 chars / 2,643 lines" (also accepts KO "자 / 줄")
+INDEX_SIZE_RE = re.compile(
+    r"`tasks\.md`\s*([\d,]+)\s*(?:chars|자)\s*/\s*([\d,]+)\s*(?:lines|줄)")
+MTIME_SLACK = 2  # seconds — filesystem timestamp tolerance
 
 ID_PREFIXES = "DEV|OPS|TS|ADM"
 CARD_RE = re.compile(r"^#{1,6}\s+((?:" + ID_PREFIXES + r")-\d{3})\b\s*[—–-]?\s*(.*)$")
@@ -160,10 +166,54 @@ def load_board():
     return out
 
 
+def check_index_freshness():
+    """Is the session-start index (tasks-index.md) older than tasks.md?
+
+    Why this exists: the generator (gen-tasks-index.py) was introduced with only a
+    *rule* attached — "re-run it after editing cards". Rules like that rot silently;
+    a real audit found the index 22 minutes behind its source. So the gate that
+    already checks board sync now checks the index too.
+
+    Returns a list of problem strings (empty = fine).
+    세션 착수 인덱스가 정본보다 낡았는지 본다 — 규칙 대신 도구로 잡는다.
+    """
+    fix = "  => re-run `python gen-tasks-index.py`"
+    if not os.path.exists(INDEX_MD):
+        return ["[index missing] tasks-index.md not found — sessions have no start index." + fix]
+
+    out = []
+    try:
+        if os.path.getmtime(INDEX_MD) + MTIME_SLACK < os.path.getmtime(TASKS_MD):
+            out.append("[index stale] tasks-index.md is older than tasks.md "
+                       "(cards were edited without regenerating the index)." + fix)
+    except OSError:
+        pass
+
+    # Content check — catches cases mtime cannot (copies, reverts, restores)
+    try:
+        head = io.open(INDEX_MD, encoding="utf-8").read(4000)
+        md = io.open(TASKS_MD, encoding="utf-8").read()
+    except OSError:
+        return out
+    m = INDEX_SIZE_RE.search(head)
+    if m:
+        chars = int(m.group(1).replace(",", ""))
+        lines = int(m.group(2).replace(",", ""))
+        # NOTE: must match gen-tasks-index.py exactly —
+        #   lines = read().split(NL) -> len(lines) ; chars = sum(len(l)) (newlines excluded)
+        real_lines = md.count(NL) + 1
+        real_chars = len(md) - md.count(NL)
+        if (chars, lines) != (real_chars, real_lines):
+            out.append("[index stale] tasks-index.md says {:,} chars/{:,} lines, "
+                       "actual {:,}/{:,}".format(chars, lines, real_chars, real_lines) + fix)
+    return out
+
+
 def main():
     cards = load_cards()
     board = load_board()
     problems, notes = [], []
+    problems.extend(check_index_freshness())
 
     print("tasks.md cards: {} · board TASKS: {}".format(len(cards), len(board)))
     print("-" * 66)

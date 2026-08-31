@@ -2,6 +2,18 @@
 
 > Newest first. · 최신이 맨 위. Board/engine feature changes are recorded here (mirrored from the internal original this repo was anonymized from).
 
+## 2026-09-01 — ⏱️ The checker now also catches a stale index · 점검기가 낡은 인덱스까지 잡는다
+
+- **Problem · 문제**: the session-start index shipped in the previous entry came with a *rule* attached — "re-run `gen-tasks-index.py` after editing cards". A scheduled audit of the internal deployment found that rule had quietly failed: the index was 22 minutes behind its source, and the size line it advertises (`764,764 chars / 2,643 lines`) no longer matched reality. A session starting from it would have read a table of contents missing the newest work — with nothing signalling that.
+- 앞선 항목에서 만든 착수 인덱스에는 "카드를 고쳤으면 생성기를 다시 돌려라"라는 **규칙**만 붙어 있었습니다. 정기 감사에서 그 규칙이 조용히 새어 나간 걸 발견했습니다 — 인덱스가 정본보다 22분 낡았고, 인덱스에 적힌 분량도 실제와 달랐습니다. 그 목차로 시작한 세션은 **최신 작업이 빠진 목차**를 읽게 되는데 아무 신호도 없었습니다.
+- **Change · 개선**: `check-board-sync.py` gains `check_index_freshness()` — the gate you already run at the end of a card edit now also fails (**exit 1**) when `tasks-index.md` is missing, older than `tasks.md` (mtime, 2s slack), or advertises a size that does not match the source. Each finding carries the exact command that fixes it. Board-sync logic and output format are untouched — this is additive.
+- 카드 수정 끝에 이미 돌리던 그 게이트가 **인덱스 부재·mtime 낡음·분량 불일치**도 실패로 잡습니다(종료코드 1). 각 항목에 고치는 명령을 함께 출력합니다. 기존 보드 대조 로직·출력은 그대로(추가만).
+- **Implementation note · 구현 주의**: the size comparison must use *exactly* the generator's definition — lines = `split(NL)` count, chars = **sum of line lengths (newlines excluded)**. Counting raw string length instead produced a check that always failed. If you port this, copy the definition, not the intent.
+- 분량 비교는 생성기와 **똑같은 정의**를 써야 합니다(줄수=개행수+1, 글자수=**개행 제외**). 전체 문자열 길이로 세면 항상 실패하는 점검이 됩니다.
+- **Wider lesson · 더 큰 교훈**: this is the second time in this repo that a step left as a written rule rotted while the same step, once wrapped in a checker, stayed correct. **If a step matters and only a rule guards it, it will rot.** A related documentation audit the same day found an index table whose *count* was right (53) while a row was missing (52 rows) — count parity does not prove list parity; compare ids, not totals.
+- 이 레포에서 **규칙으로만 남긴 단계는 낡고, 점검기로 감싼 단계는 살아남는** 사례가 두 번째입니다. 같은 날 문서 감사에서는 **개수(53)는 맞는데 행이 하나 빠진(52행)** 목차도 나왔습니다 — 개수 일치는 목록 일치가 아닙니다. 합계 말고 **id 전수 대조**로 볼 것.
+- **Verified · 검증**: internal deployment — stale index reproduced both findings and exit 1; after regenerating, exit 0 with the pre-existing notes unchanged. This repo's sample data: 6 cards, index fresh, exit 0.
+
 ## 2026-08-25 — 🧭 Session-start index + board-sync checker · 착수 인덱스·동기화 점검기
 
 - **Problem · 문제**: two failure modes that both stay silent. (1) `tasks.md` is the source of truth and the onboarding rule is "read it first" — but in the internal deployment this repo mirrors, it grew to ~650,000 characters / 2,250 lines, past what an AI assistant can hold in one context, so the rule became unfollowable while still being written down. (2) The same card lived in more than one hand-kept place, and cards added to the markdown but never to the board's `TASKS` array simply never rendered — repeatedly, over months. Nothing errored, so nobody noticed.

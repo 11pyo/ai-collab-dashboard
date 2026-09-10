@@ -30,7 +30,9 @@
 
 1. New task → add a new ID here (prefix = class), then add a card in `task-board.html`.
 2. Status change → update status + "next action" + a dated log line; sync the board.
-3. `waiting` **must** state what it's waiting on.
+3. `waiting` **must** state what it's waiting on — **and when it is due back**:
+   `- **waiting on**: <what, from whom> · sent <unconfirmed | not sent | YYYY-MM-DD> · due <YYYY-MM-DD> · if overdue: <action>`
+   `sent` defaults to **unconfirmed** — the human may have sent it without telling the agent, so never write "not sent" unless they said so. `gen-tasks-index.py` collects these rows into an **Awaiting reply** section and flags the ones past due, so a waiting card cannot sit forever unnoticed.
 4. On done, record the result + date.
 5. **Never** put secrets (accounts, passwords, real data) in tasks.
 
@@ -66,7 +68,7 @@ When referencing a task, always write it as `ID — title` (not the bare ID).
 - **status**: waiting
 - **requester**: finance
 - **detail**: ABAP dump when issuing a corrective tax invoice.
-- **waiting on**: Basis team to grant ST22 access for root-cause analysis.
+- **waiting on**: Basis team to grant ST22 access for root-cause analysis. · sent unconfirmed · due 2026-09-05 · if overdue: escalate to the Basis lead
 
 ### ADM-001 — Quarterly access-control review report
 - **status**: received

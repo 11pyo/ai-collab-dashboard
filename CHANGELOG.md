@@ -2,6 +2,18 @@
 
 > Newest first. · 최신이 맨 위. Board/engine feature changes are recorded here (mirrored from the internal original this repo was anonymized from).
 
+## 2026-09-10 — 📤 Waiting cards now carry a deadline · 대기 카드에 기한을 붙인다
+
+- **Problem · 문제**: a card sat in `waiting` for two weeks because the e-mail it was waiting on had been *drafted but never sent* — an internal stall wearing the costume of an external wait. The board said "waiting for legal", so nobody looked again.
+- 어떤 카드가 2주간 「대기」에 멈춰 있었습니다. 기다리던 회신의 **메일이 작성만 되고 발송되지 않았기** 때문입니다 — 외부 회신 대기로 위장한 내부 정체였고, 보드에 「법무팀 대기」로 떠 있으니 아무도 다시 보지 않았습니다.
+- **Change · 개선**: the `waiting on` row takes three more fields — `sent`, `due`, `if overdue` — and `gen-tasks-index.py` collects them into an **Awaiting reply** section that flags anything past its due date (and prints an overdue count on stdout). Both the bullet form (`- **waiting on**: …`) and a table row are parsed.
+- 「waiting on」 줄에 **발송·회신기한·기한 경과 시 조치**를 함께 적으면, 생성기가 이를 모아 「Awaiting reply」 표로 올리고 기한이 지난 건을 표시합니다(stdout 에도 건수 경고).
+- **Design note · 설계 주의**: `sent` defaults to **unconfirmed**, never "not sent". The agent cannot observe whether the human sent it — asserting "not sent" produces the mirror-image error: urging a re-send of something already sent. And because the index is generated at a point in time, the due date is written as *data* and **the session compares it against today's date**.
+- 「발송」의 기본값은 **미확인**입니다. 사람이 직접 보내고 말하지 않을 수 있어 에이전트는 발송 여부를 관측할 수 없습니다 — 「안 보냄」으로 단정하면 **이미 보낸 것을 다시 보내라고 권하는 반대 방향 오류**가 납니다. 인덱스는 생성 시점 기준이므로 기한은 데이터로만 싣고 **판정은 세션이 오늘 날짜로** 합니다.
+- **Wider lesson · 더 큰 교훈**: third time in this repo that a step left as a written rule rotted. "State what you're waiting on" was already update-rule #3 — it simply had no deadline and no checker behind it. A rule nobody re-reads is a rule that expires.
+- 이 레포에서 **규칙으로만 남긴 단계가 낡은 세 번째** 사례입니다. "무엇을 기다리는지 적어라"는 이미 규칙 3번이었지만 **기한도, 점검기도 없었습니다.**
+- **Verified · 검증**: parser unit cases (one ordering bug found and fixed — the "if overdue" chunk was being swallowed by the "due" branch), plus end-to-end on the sample board (`TS-001` renders "⏰ 5d overdue").
+
 ## 2026-09-01 — ⏱️ The checker now also catches a stale index · 점검기가 낡은 인덱스까지 잡는다
 
 - **Problem · 문제**: the session-start index shipped in the previous entry came with a *rule* attached — "re-run `gen-tasks-index.py` after editing cards". A scheduled audit of the internal deployment found that rule had quietly failed: the index was 22 minutes behind its source, and the size line it advertises (`764,764 chars / 2,643 lines`) no longer matched reality. A session starting from it would have read a table of contents missing the newest work — with nothing signalling that.

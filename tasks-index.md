@@ -8,7 +8,7 @@
 2. Then read **only that card's line range** from `tasks.md` — e.g. `sed -n '60,88p' tasks.md`.
 3. When working a card, read the body **and** its AI context log.
 
-- 6 cards — open 5 / recurring 0 / closed 1 · `tasks.md` 2,823 chars / 75 lines
+- 6 cards — open 5 / recurring 0 / closed 1 · `tasks.md` 3,350 chars / 77 lines
 
 ---
 
@@ -16,11 +16,20 @@
 
 | ID | Title | Status | Requester | Due | Next action | tasks.md lines |
 |---|---|---|---|---|---|---|
-| **DEV-001** | Add a unit-price column to the sales-proposal screen | in-progress | marketing |  | spec confirmed → implement, then transport | L43–48 (6 lines) |
-| **OPS-002** | Monthly cloud-cost allocation filing | in-progress | IT / finance |  | allocate across cost centers, then file | L60–64 (5 lines) |
-| **ADM-001** | Quarterly access-control review report | received | IT GRC |  | pull the quarterly access list | L71–75 (5 lines) |
-| **DEV-002** | Monthly billing automation report | received | finance |  | scope the report fields | L49–53 (5 lines) |
-| **TS-001** | Tax-invoice dump at month-end | waiting | finance |  | waiting on Basis to grant ST22 access | L65–70 (6 lines) |
+| **DEV-001** | Add a unit-price column to the sales-proposal screen | in-progress | marketing |  | spec confirmed → implement, then transport | L45–50 (6 lines) |
+| **OPS-002** | Monthly cloud-cost allocation filing | in-progress | IT / finance |  | allocate across cost centers, then file | L62–66 (5 lines) |
+| **ADM-001** | Quarterly access-control review report | received | IT GRC |  | pull the quarterly access list | L73–77 (5 lines) |
+| **DEV-002** | Monthly billing automation report | received | finance |  | scope the report fields | L51–55 (5 lines) |
+| **TS-001** | Tax-invoice dump at month-end | waiting | finance |  | waiting on Basis to grant ST22 access | L67–72 (6 lines) |
+
+## 📤 Awaiting reply · 회신·응답 대기
+
+> Generated on **2026-09-10**. Compare the due dates below with **today's date** and, if one has passed, ask the human once: *did you send it? did a reply come back?*
+> ⚠️ `sent` defaults to **unconfirmed** — the human may have sent it without telling you. Never record "not sent" unless they said so.
+
+| ID | Waiting on | Sent | Due | If overdue |
+|---|---|---|---|---|
+| **TS-001** | Basis team to grant ST22 access for root-cause analysis. | unconfirmed | 2026-09-05 ⏰**5d overdue** | escalate to the Basis lead |
 
 ## 🔁 Recurring · 정기 카드 (run when triggered)
 
@@ -28,4 +37,4 @@ _None._
 
 ## ✅ Closed · 종료 카드 (reference only)
 
-- **OPS-001** — Year-end org restructure: re-map sales proposals · L54–59
+- **OPS-001** — Year-end org restructure: re-map sales proposals · L56–61

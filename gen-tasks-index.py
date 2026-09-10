@@ -28,6 +28,7 @@ Usage · 사용
     python gen-tasks-index.py
     Re-run it after adding or editing any card. Do not hand-edit `tasks-index.md`.
 """
+import datetime
 import io
 import json
 import os
@@ -152,6 +153,84 @@ def load_board():
     return out
 
 
+WAIT_HEADS = ("| waiting on", "| 대기 근거")
+DATE_RE = re.compile(r"(20\d{2}-\d{2}-\d{2})")
+
+
+def _tail(chunk, head_len):
+    return chunk[head_len:].strip(" :=")
+
+
+def parse_wait(cell):
+    """Parse a "waiting on" row into {what, sent, due, duedate, then}.
+
+    Row format (either language):
+        | Waiting on | reply from X · sent unconfirmed · due 2026-09-05 · if overdue: close |
+        | 대기 근거 | 외부회신 — X 앞 메일 · 발송 미확인 · 회신기한 2026-09-05 · 기한 경과 시 종결 |
+
+    NOTE: `sent` defaults to **unconfirmed**, never "not sent". The human may have
+    sent it without telling the agent — asserting "not sent" causes the opposite
+    error (advising a re-send of something already sent).
+    """
+    c = re.sub(r"[*`]", "", cell).strip()
+    if not c:
+        return None
+    what, sent, due, then = "", "unconfirmed / 미확인", "", ""
+    for chunk in [x.strip() for x in c.split("·")]:
+        if not chunk:
+            continue
+        low = chunk.lower()
+        if low.startswith("sent"):
+            sent = _tail(chunk, 4) or sent
+        elif chunk.startswith("발송"):
+            sent = _tail(chunk, 2) or sent
+        elif "경과" in chunk or low.startswith("if overdue"):
+            then = (chunk.split("시", 1)[-1] if "경과" in chunk else chunk.split(":", 1)[-1]).strip(" :")
+        elif low.startswith("due"):
+            due = _tail(chunk, 3)
+        elif chunk.startswith("회신기한"):
+            due = _tail(chunk, 4)
+        elif not what:
+            what = chunk
+    m = DATE_RE.search(due)
+    duedate = None
+    if m:
+        try:
+            duedate = datetime.date(*[int(x) for x in m.group(1).split("-")])
+        except ValueError:
+            duedate = None
+    return {"what": what, "sent": sent, "due": due or "—", "duedate": duedate, "then": then}
+
+
+def wait_cell(line):
+    """Return the value of a "waiting on" row — table cell or bullet — else None."""
+    st = line.strip()
+    plain = re.sub(r"[*`]", "", st).lower()
+    if plain.startswith("| waiting on") or plain.startswith("| 대기 근거"):
+        cells = st.split("|")
+        return cells[2] if len(cells) >= 3 else None
+    if plain.startswith("- waiting on") or plain.startswith("- 대기 근거"):
+        return st.split(":", 1)[1] if ":" in st else None
+    return None
+
+
+def collect_waits(spans, live):
+    """Scan each open card's line range for its "waiting on" row."""
+    lines = io.open(SRC, encoding="utf-8").read().split(NL)
+    out = []
+    for cid in live:
+        sp = spans[cid]
+        for ln in lines[sp["start"] - 1:sp["end"]]:
+            cell = wait_cell(ln)
+            if cell is not None:
+                w = parse_wait(cell)
+                if w:
+                    w["id"] = cid
+                    out.append(w)
+                break
+    return out
+
+
 def load_cards():
     """{id: {title, start, end}} — heading line ranges in tasks.md."""
     lines = io.open(SRC, encoding="utf-8").read().split(NL)
@@ -223,6 +302,25 @@ def main():
     else:
         o.append("_Nothing open._")
 
+    waits = collect_waits(spans, live)
+    today = datetime.date.today()
+    o += ["", "## 📤 Awaiting reply · 회신·응답 대기", ""]
+    if waits:
+        o += ["> Generated on **{}**. Compare the due dates below with **today's date** and, "
+              "if one has passed, ask the human once: *did you send it? did a reply come back?*".format(today.isoformat()),
+              "> ⚠️ `sent` defaults to **unconfirmed** — the human may have sent it without telling you. "
+              "Never record \"not sent\" unless they said so.",
+              "",
+              "| ID | Waiting on | Sent | Due | If overdue |", "|---|---|---|---|---|"]
+        for w in sorted(waits, key=lambda x: (x["duedate"] or datetime.date.max, x["id"])):
+            over = ""
+            if w["duedate"] and (today - w["duedate"]).days > 0:
+                over = " ⏰**{}d overdue**".format((today - w["duedate"]).days)
+            o.append("| **{}** | {} | {} | {}{} | {} |".format(
+                w["id"], w["what"] or "—", w["sent"], w["due"], over, w["then"] or "—"))
+    else:
+        o.append("_Nothing awaiting a reply._")
+
     o += ["", "## 🔁 Recurring · 정기 카드 (run when triggered)", ""]
     if recur:
         o += ["| ID | Title | Cadence / trigger | Next action | tasks.md lines |", "|---|---|---|---|---|"]
@@ -251,7 +349,10 @@ def main():
     o.append("")
 
     io.open(OUT, "w", encoding="utf-8", newline=NL).write(NL.join(o))
+    over_n = len([w for w in waits if w["duedate"] and w["duedate"] < today])
     print("wrote {}".format(OUT))
+    if over_n:
+        print("  ⏰ {} reply deadline(s) passed - see the 'Awaiting reply' section".format(over_n))
     print("  {} cards (open {} / recurring {} / closed {} / not-on-board {})".format(
         len(spans), len(live), len(recur), len(closed), len(unlisted)))
     print("  tasks.md {:,} chars -> index {:,} chars".format(n_chars, sum(len(x) for x in o)))

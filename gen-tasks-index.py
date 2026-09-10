@@ -176,7 +176,9 @@ def parse_wait(cell):
     if not c:
         return None
     what, sent, due, then = "", "unconfirmed / 미확인", "", ""
-    for chunk in [x.strip() for x in c.split("·")]:
+    # Separator is " · " **with surrounding spaces** — a bare "·" also joins words in Korean.
+    seps = c.split(" · ") if " · " in c else c.split("·")
+    for chunk in [x.strip() for x in seps]:
         if not chunk:
             continue
         low = chunk.lower()
@@ -199,6 +201,8 @@ def parse_wait(cell):
             duedate = datetime.date(*[int(x) for x in m.group(1).split("-")])
         except ValueError:
             duedate = None
+    if len(what) > 90:
+        what = what[:90].rstrip() + "…"
     return {"what": what, "sent": sent, "due": due or "—", "duedate": duedate, "then": then}
 
 

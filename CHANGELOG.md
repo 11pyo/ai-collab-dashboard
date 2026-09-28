@@ -2,6 +2,16 @@
 
 > Newest first. · 최신이 맨 위. Board/engine feature changes are recorded here (mirrored from the internal original this repo was anonymized from).
 
+## 2026-09-28 (3) — 🚧 Tool gates for repeat mistakes · 반복 실수를 도구 관문으로
+
+- **Problem · 문제**: the internal mistake log had 30+ entries marked "again / recurred / Nth time" — rules existed, the same slips came back.
+- 내부 실수 로그에 「또·재발·N번째」가 30건 넘게 있었습니다. 규칙이 있는데 같은 실수가 되풀이됐습니다.
+- **Change · 개선**: `hooks/guard_tools.py` (Pre/PostToolUse) picks only what a tool can judge exactly — ① SQL lines over 255 chars (a remote SQL endpoint answered with an opaque server error) and `SELECT *` are denied before running; ② a result with a packed-decimal column gets a currency-scale reminder; ③ right after a source deploy/activate, a reminder to re-read the remote source (0-line diff) and to tell testers to reopen the transaction; ④ a Bash redirect into a variable that is neither set in the command nor in the environment is denied (empty path → write to the wrong place or hang on stdin).
+- ①너무 긴 SQL 줄·`SELECT *`는 실행 전 거부 ②패킹 10진 금액 컬럼이 있으면 통화 소수 자릿수 경고 ③소스 반영 직후 원격 재조회·재진입 안내 ④미설정 변수로의 리다이렉션 거부.
+- **Design note · 설계 주의**: judge amounts by the column **type**, not the value's shape — the SQL tool returned packed decimals as JSON numbers with the trailing `.00` dropped, so a regex on `\d+\.\d{2}` missed exactly the risky case (found in a live test). Mistakes that need judgement (e.g. answer length) are left out: a false positive gate is worse than the rule.
+- 금액은 값 모양이 아니라 **컬럼 형식**으로 판정합니다 — 조회 도구가 끝의 `.00`을 떼고 숫자로 돌려줘, 값 모양 검사는 정확히 위험한 경우를 놓쳤습니다(실측 발견). 판단이 필요한 실수는 제외했습니다 — 오탐 관문은 규칙보다 해롭습니다.
+- **Verified · 검증**: 13 piped cases (4 deny · 7 pass incl. `COUNT(*)`, env vars, `for` loop vars, `2>&1`, date-like values · 2 reminders) + live session checks of the Bash deny, the `SELECT *` deny and the amount reminder.
+
 ## 2026-09-28 (2) — 📏 Measure the pre-search before tuning it · 고치기 전에 잰다
 
 - **Problem · 문제**: the pre-search hook injects context on every prompt, but nobody knew whether it helped. Tuning the keyword rules by feel is how the internal deployment's rules rotted before.

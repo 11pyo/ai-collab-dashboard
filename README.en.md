@@ -57,7 +57,7 @@ The result: any number of sessions can record received → in-progress → waiti
 | `inquiry-log.js` | Append-only inquiry push log (fictional sample). |
 | `log-inquiry.py` | CLI to append/transition/close inquiries safely. |
 | `docs/` | Vision and git-workflow notes. |
-| `hooks/` | (Optional) two Claude Code hooks — inject a board pre-search on every prompt · regenerate the index and run the sync check when a turn ends with the card files changed · log whether the pre-search was actually used (`hook_report.py` aggregates hit/use rates). Copy the `hooks` block of `hooks/settings.example.json` into `.claude/settings.json` to enable. |
+| `hooks/` | (Optional) two Claude Code hooks — inject a board pre-search on every prompt · regenerate the index and run the sync check when a turn ends with the card files changed · log whether the pre-search was actually used (`hook_report.py` aggregates hit/use rates) · tool gates (`guard_tools.py` — block over-long SQL lines and `SELECT *`, flag amount columns, remind to re-read after a deploy, block redirects to unset variables). Copy the `hooks` block of `hooks/settings.example.json` into `.claude/settings.json` to enable. |
 | `AGENTS.md` | Orientation for AI assistants working in this repo. |
 
 ## Quick start

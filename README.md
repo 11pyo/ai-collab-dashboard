@@ -50,7 +50,7 @@
 | `inquiry-log.js` | 추가전용 문의 푸시로그(가상 샘플). |
 | `log-inquiry.py` | 문의를 안전하게 덧붙이는 CLI. |
 | `docs/` | 비전·git 워크플로우 노트. |
-| `hooks/` | (선택) Claude Code 훅 2종 — 질문마다 보드 선행검색 자동 주입 · 카드가 바뀐 채 턴이 끝나면 인덱스 재생성+동기화 점검 · 선행검색이 실제로 쓰였는지 기록(`hook_report.py`로 적중률 집계). `hooks/settings.example.json`의 `hooks` 블록을 `.claude/settings.json`에 넣으면 켜진다. |
+| `hooks/` | (선택) Claude Code 훅 2종 — 질문마다 보드 선행검색 자동 주입 · 카드가 바뀐 채 턴이 끝나면 인덱스 재생성+동기화 점검 · 선행검색이 실제로 쓰였는지 기록(`hook_report.py`로 적중률 집계) · 도구 관문(`guard_tools.py` — 너무 긴 SQL 줄·`SELECT *` 차단, 금액 컬럼 경고, 소스 반영 후 확인 안내, 미설정 변수 리다이렉션 차단). `hooks/settings.example.json`의 `hooks` 블록을 `.claude/settings.json`에 넣으면 켜진다. |
 | `AGENTS.md` | 이 레포에서 작업하는 AI를 위한 안내. |
 
 ## 빠른 시작

@@ -20,6 +20,12 @@
             "command": "python \"$CLAUDE_PROJECT_DIR/hooks/stop_board_sync.py\"",
             "timeout": 120,
             "statusMessage": "checking board sync"
+          },
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/hooks/stop_turn_audit.py\"",
+            "timeout": 20,
+            "statusMessage": "measuring pre-search use"
           }
         ]
       }

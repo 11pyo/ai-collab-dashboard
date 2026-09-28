@@ -3,6 +3,7 @@ inquiry-log.js.lock
 
 # Hook state (last passing sync check)
 hooks/.last_board_sync
+hooks/logs/
 
 # Python
 __pycache__/

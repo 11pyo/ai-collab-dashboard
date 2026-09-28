@@ -2,6 +2,16 @@
 
 > Newest first. · 최신이 맨 위. Board/engine feature changes are recorded here (mirrored from the internal original this repo was anonymized from).
 
+## 2026-09-28 (2) — 📏 Measure the pre-search before tuning it · 고치기 전에 잰다
+
+- **Problem · 문제**: the pre-search hook injects context on every prompt, but nobody knew whether it helped. Tuning the keyword rules by feel is how the internal deployment's rules rotted before.
+- 선행검색 훅이 매 질문 맥락을 붙이지만, 그게 도움이 되는지 아무도 몰랐습니다. 감으로 규칙을 고치면 예전처럼 규칙이 낡습니다.
+- **Change · 개선**: `prompt_context.py` records each turn (kind, keywords, injected ids) to `hooks/logs/turns.jsonl`; a new Stop hook `stop_turn_audit.py` checks which injected ids the agent actually mentioned (reply text + tool inputs after the turn started, read from the transcript) and writes `audits.jsonl`; `hook_report.py` prints hit rate, use rate, and **keywords that keep finding nothing** — the list to extend the vocabulary with. Optional: set `ARCHIVE_PATH` and the same hook blocks a stop once when the archive changed this turn but neither the inquiry log nor `tasks.md` did ("record it, or finish if it was pure knowledge work").
+- 질문마다 무엇을 붙였는지 기록하고, 턴이 끝날 때 그중 에이전트가 실제로 언급한 것을 가려 기록합니다. `hook_report.py`가 적중률·사용률·**자주 못 찾는 키워드**(사전 보강 후보)를 보여 줍니다. 선택: `ARCHIVE_PATH`를 주면 아카이브만 고치고 기록이 없는 턴에 한 번 되묻습니다.
+- **Design notes · 설계 주의**: logs hold keywords that may include customer names or document numbers — keep `BOARD_HOOK_LOGDIR` outside any shared folder. Each turn is judged once (a second Stop in the same turn passes through).
+- 로그 키워드에 고객명·문서번호가 섞일 수 있으니 `BOARD_HOOK_LOGDIR`은 공유 폴더 밖에 두세요. 한 턴은 한 번만 판정합니다.
+- **Verified · 검증**: sample board — a card-id prompt, a reply mentioning it → use rate 1/1; internal deployment — 3 of 7 injected ids correctly detected as used (text + tool input), nudge fires once and the second Stop passes.
+
 ## 2026-09-28 — 🪝 Rules become hooks · 규칙을 훅으로
 
 - **Problem · 문제**: every onboarding rule in this repo was a sentence the agent had to remember — "search open cards and past inquiries before answering", "re-run the index generator after a card edit", "run the sync check before you finish". Checkers existed, but nothing *ran* them. In the internal deployment a review found the project had zero hooks: every rule lived in prose that is re-read every turn, and the same slips kept recurring despite the rules.

@@ -17,6 +17,7 @@ host names) + words that also appear in the card titles / archive keywords.
 No vector DB: at this scale a vocabulary built from your own index is enough.
 Any error exits silently — a hook must never block the prompt.
 """
+import datetime
 import json
 import os
 import re
@@ -26,6 +27,11 @@ ROOT = os.environ.get("BOARD_ROOT") or os.path.dirname(os.path.dirname(os.path.a
 IDX = os.path.join(ROOT, "tasks-index.md")
 INQ = os.path.join(ROOT, "inquiry-log.js")
 STRUCT = os.path.join(ROOT, "archive-structure.md")
+
+# Measurement log (hooks/logs/, git-ignored). Keep it outside any shared folder if prompts
+# may carry customer names or document numbers. · 측정 로그 — 공유 폴더 밖에 두는 것을 권장.
+LOGDIR = os.environ.get("BOARD_HOOK_LOGDIR") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
+TURNS = os.path.join(LOGDIR, "turns.jsonl")
 
 TOP_N = 3
 MAX_TOKENS = 25
@@ -168,21 +174,38 @@ def clip(s, n):
     return s if len(s) <= n else s[: n - 1] + "…"
 
 
+def log_turn(session, kind, **fields):
+    """Turn-start record — the Stop hook (stop_turn_audit.py) looks at what happened after it."""
+    try:
+        os.makedirs(LOGDIR, exist_ok=True)
+        rec = {"ts": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
+               "session": session, "kind": kind}
+        rec.update(fields)
+        with open(TURNS, "a", encoding="utf-8") as f:
+            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    except OSError:
+        pass
+
+
 def main():
     raw = sys.stdin.buffer.read().decode("utf-8", errors="replace")
     try:
-        prompt = json.loads(raw).get("prompt", "")
+        data = json.loads(raw)
     except ValueError:
         return
+    prompt, session = data.get("prompt", ""), data.get("session_id", "")
     if len(prompt.strip()) < 6 or prompt.lstrip().startswith("/"):
+        log_turn(session, "short")
         return
     if "<agent-message" in prompt or "[Subagent hand-back]" in prompt:
+        log_turn(session, "handback")
         return  # a subagent's report, not a new question — the searching already happened
 
     irows, qrows, srows = index_rows(read(IDX)), inquiry_rows(read(INQ)), struct_rows(read(STRUCT))
     codes = code_tokens(prompt)
     words = matched_words(prompt, vocabulary(irows, srows))
     if not codes and not words:
+        log_turn(session, "nokeyword")
         return  # nothing to search on → inject nothing (zero context cost)
 
     cards = rank(irows, lambda r: r["text"], codes, words)
@@ -200,9 +223,13 @@ def main():
     for r in inqs:
         out.append("■ inquiry {} ({} · {}) {} → {}".format(r.get("id"), r.get("date", ""), r.get("status", ""),
                                                          clip(r.get("q", ""), 80), clip(r.get("a", ""), 70) or "(no answer)"))
+    text = "\n".join(out)[:MAX_CHARS]
+    log_turn(session, "searched", keywords=(codes + words)[:15],
+             hits=[r["id"] for r in cards] + ["#" + r["id"] for r in arts] + [r.get("id") for r in inqs],
+             chars=len(text))
     sys.stdout.reconfigure(encoding="utf-8")
     print(json.dumps({"hookSpecificOutput": {"hookEventName": "UserPromptSubmit",
-                                             "additionalContext": "\n".join(out)[:MAX_CHARS]}}, ensure_ascii=False))
+                                             "additionalContext": text}}, ensure_ascii=False))
 
 
 if __name__ == "__main__":

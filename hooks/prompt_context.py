@@ -64,6 +64,8 @@ def code_tokens(prompt):
         for t in re.findall(p, prompt):
             if len(t) < 3 or t.upper() in UPPER_STOP or re.fullmatch(r"[0-9-]+", t):
                 continue
+            if re.fullmatch(r"[0-9a-f]{12,}", t):  # agent/session ids, hashes
+                continue
             if t.lower() not in (x.lower() for x in out):
                 out.append(t)
     return out[:MAX_TOKENS]
@@ -174,6 +176,8 @@ def main():
         return
     if len(prompt.strip()) < 6 or prompt.lstrip().startswith("/"):
         return
+    if "<agent-message" in prompt or "[Subagent hand-back]" in prompt:
+        return  # a subagent's report, not a new question — the searching already happened
 
     irows, qrows, srows = index_rows(read(IDX)), inquiry_rows(read(INQ)), struct_rows(read(STRUCT))
     codes = code_tokens(prompt)

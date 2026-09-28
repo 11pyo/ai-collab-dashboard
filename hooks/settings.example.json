@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/hooks/prompt_context.py\"",
+            "timeout": 10,
+            "statusMessage": "searching the board"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/hooks/stop_board_sync.py\"",
+            "timeout": 120,
+            "statusMessage": "checking board sync"
+          }
+        ]
+      }
+    ]
+  }
+}

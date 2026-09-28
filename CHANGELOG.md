@@ -2,6 +2,20 @@
 
 > Newest first. · 최신이 맨 위. Board/engine feature changes are recorded here (mirrored from the internal original this repo was anonymized from).
 
+## 2026-09-28 — 🪝 Rules become hooks · 규칙을 훅으로
+
+- **Problem · 문제**: every onboarding rule in this repo was a sentence the agent had to remember — "search open cards and past inquiries before answering", "re-run the index generator after a card edit", "run the sync check before you finish". Checkers existed, but nothing *ran* them. In the internal deployment a review found the project had zero hooks: every rule lived in prose that is re-read every turn, and the same slips kept recurring despite the rules.
+- 이 레포의 온보딩 규칙은 전부 에이전트가 **기억해서** 지켜야 하는 문장이었습니다 — 「답하기 전에 열린 카드·과거 문의 검색」, 「카드 수정 후 인덱스 재생성」, 「끝내기 전 동기화 점검」. 점검기는 있었지만 **돌려 주는 장치**가 없었습니다. 내부 운영본을 점검해 보니 훅이 0개였고, 규칙이 있는데도 같은 실수가 반복됐습니다.
+- **Change · 개선** (`hooks/`, opt-in):
+  - `prompt_context.py` (**UserPromptSubmit**) — on every prompt, searches `tasks-index.md`, `inquiry-log.js` (merged by id) and, if present, a knowledge archive's `archive-structure.md`; injects the top 3 per source in ≤1,500 chars. Keywords = code-like tokens in the prompt + words that also occur in your own card titles / archive keywords. A lightweight RAG with no vector DB — at board scale, a vocabulary built from your own index is enough. Prompts with no keyword inject nothing.
+  - `stop_board_sync.py` (**Stop**) — if `tasks.md` or `task-board.html` is newer than the last passing check, regenerates the index and runs `check-board-sync.py`; on drift it blocks the stop **once** and hands the report back (`stop_hook_active` prevents a loop). The trigger is file mtime, so edits made through throw-away scripts are caught too.
+  - 질문마다 보드 세 곳을 먼저 찾아 상위 3건씩 1,500자 이내로 붙여 주고(벡터 DB 없는 경량 RAG, 키워드 없으면 아무것도 안 붙임), 턴이 끝날 때 카드 파일이 바뀌었으면 인덱스 재생성 + 동기화 점검을 돌려 어긋나면 한 번 막고 고치게 합니다(수정 시각으로 판정 → 스크립트 편집도 포착).
+- **Design notes · 설계 주의**: hook output is re-read in every later round of the conversation, so it is capped and silent when it has nothing to say. A hook error never blocks the turn. The internal deployment also puts irreversible tool calls (transport creation/release, object deletion) behind `permissions.ask` — a per-call confirmation that complements, not replaces, asking in chat first.
+- 훅 출력은 이후 모든 라운드에서 다시 읽히므로 짧게, 할 말이 없으면 침묵합니다. 훅 오류는 턴을 막지 않습니다. 내부 운영본은 되돌리기 어려운 도구 호출(전송요청 생성·릴리즈, 오브젝트 삭제)을 `permissions.ask`로 매번 확인받게 했습니다 — 대화로 먼저 승인받는 절차를 대체하지 않는 최후 관문입니다.
+- **Wider lesson · 더 큰 교훈**: the fourth time here that a written rule was replaced by a tool — after the index generator, the stale-index check, and the waiting-card deadline. Checkers made drift *detectable*; hooks make the check *happen*.
+- 규칙이 도구로 바뀐 네 번째 사례입니다(인덱스 생성기 · 낡은 인덱스 점검 · 대기 카드 기한 다음). 점검기는 어긋남을 **잡을 수 있게** 했고, 훅은 점검이 **실제로 돌게** 합니다.
+- **Verified · 검증**: sample data — card hits for a title phrase and a card id, an inquiry hit for a ticket number (the parser also reads hand-written JS literals), no output for "ok go ahead"; stop hook passes, stays silent on the second run. Internal deployment — 7 sample prompts ~0.4 s each, all three stop paths (silent / regenerate / block then notify-only), and the hook confirmed firing in a live session.
+
 ## 2026-09-10 — 📤 Waiting cards now carry a deadline · 대기 카드에 기한을 붙인다
 
 - **Problem · 문제**: a card sat in `waiting` for two weeks because the e-mail it was waiting on had been *drafted but never sent* — an internal stall wearing the costume of an external wait. The board said "waiting for legal", so nobody looked again.

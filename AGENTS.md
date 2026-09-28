@@ -35,6 +35,7 @@ writers can't clobber each other. `log-inquiry.py` appends behind a short OS fil
 | `gen-tasks-index.py` | builds `tasks-index.md` from `tasks.md` + the board array · 인덱스 생성기 | yes |
 | `check-board-sync.py` | cross-checks `tasks.md` vs the `TASKS` array; exit 1 on drift · 동기화 점검기 | yes (must never auto-fix · 자동수정 금지) |
 | `docs/` | vision · git notes · 비전·git 노트 | yes |
+| `hooks/` | optional Claude Code hooks: prompt pre-search · stop-time sync check · 선택형 훅(선행검색·종료 시 동기화 점검) | yes (keep output short — it is re-read every round · 출력은 짧게) |
 
 ## Rules · 규칙 (절대)
 1. **Public repo → fictional sample data only.** No real names/customers/codes/secrets. · 공개 레포 → 가짜 샘플만. 실명·고객·코드·자격증명 금지.

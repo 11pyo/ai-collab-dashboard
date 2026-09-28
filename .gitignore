@@ -1,6 +1,9 @@
 # Lock file used by log-inquiry.py during concurrent appends
 inquiry-log.js.lock
 
+# Hook state (last passing sync check)
+hooks/.last_board_sync
+
 # Python
 __pycache__/
 *.py[cod]
